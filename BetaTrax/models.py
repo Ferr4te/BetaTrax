@@ -20,15 +20,6 @@ class DefectReport(models.Model):
     reproduce_step=models.TextField()
     defect_date_time=models.TimeField(auto_now_add=True)
 
-    status = models.CharField(max_length=20, choices=CurrentStatus.choices, default=CurrentStatus.NEW)
-    severity = models.CharField(max_length=10, choices=Severity.choices, null=TRUE, blank=TRUE)
-    priority = models.CharField(max_length=10, choices=Priority.choices, null=TRUE, blank=TRUE)
-    
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    betatester = models.ForeignKey(BetaTester, on_delete=models.CASCADE)
-    productowner = models.ForeignKey(ProductOwner, on_delete=models.CASCADE)
-    developer = models.ForeignKey(Developer, on_delete=models.CASCADE)
-
     class CurrentStatus(models.TextChoices):
         NEW              = 'New',              'New'
         OPEN             = 'Open',             'Open'
@@ -51,3 +42,12 @@ class DefectReport(models.Model):
         HIGH     = 'High',     'High'
         MEDIUM   = 'Medium',   'Medium'
         LOW      = 'Low',      'Low'
+
+    status = models.CharField(max_length=20, choices=CurrentStatus.choices, default=CurrentStatus.NEW)
+    severity = models.CharField(max_length=10, choices=Severity.choices, null=True, blank=True)
+    priority = models.CharField(max_length=10, choices=Priority.choices, null=True, blank=True)
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    betatester = models.ForeignKey(BetaTester, on_delete=models.CASCADE)
+    productowner = models.ForeignKey(ProductOwner, on_delete=models.CASCADE)
+    developer = models.ForeignKey(Developer, on_delete=models.CASCADE)
