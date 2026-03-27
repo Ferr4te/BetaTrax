@@ -2,12 +2,18 @@ from django.db import models
 
 # Create your models here.
 class DefectReport(models.Model):
-    report_id=models.IntegerField()
     version=models.IntegerField()
     title=models.TextField()
     description=models.TextField()
     reproduce_step=models.TextField()
     defect_date_time=models.TimeField(auto_now_add=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    betatester = models.ForeignKey(BetaTester, on_delete=models.CASCADE)
+    productowner = models.ForeignKey(ProductOwner, on_delete=models.CASCADE)
+    developer = models.ForeignKey(Developer, on_delete=models.CASCADE)
+    severity = models.ForeignKey(Severity, on_delete=models.CASCADE)
+    priority = models.ForeignKey(Priority, on_delete=models.CASCADE)
+    
 
     class CurrentStatus(models.TextChoices):
         NEW              = 'New',              'New'
@@ -33,14 +39,12 @@ class DefectReport(models.Model):
         LOW      = 'Low',      'Low'
 
 class ProductOwner(models.Model):
-    product_owner_id=models.IntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
 class Product(models.Model):
-    product_id=models.IntegerField()
 
 class Developer(models.Model):
-    developer_id=models.IntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
 class BetaTester(models.Model):
-    tester_id=models.IntegerField()
     email=models.CharField()
