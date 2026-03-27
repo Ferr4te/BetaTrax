@@ -47,7 +47,22 @@ class DefectReport(models.Model):
     severity = models.CharField(max_length=10, choices=Severity.choices, null=True, blank=True)
     priority = models.CharField(max_length=10, choices=Priority.choices, null=True, blank=True)
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    betatester = models.ForeignKey(BetaTester, on_delete=models.CASCADE)
-    productowner = models.ForeignKey(ProductOwner, on_delete=models.CASCADE)
-    developer = models.ForeignKey(Developer, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, 
+                                on_delete=models.CASCADE,
+                                related_name='defect_reports'
+                               )
+    
+    betatester = models.ForeignKey(BetaTester,
+                                   on_delete=models.CASCADE,
+                                  related_name='defect_reports'
+                                  )
+    
+    productowner = models.ForeignKey(ProductOwner, 
+                                     on_delete=models.CASCADE,
+                                     related_name='defect_reports'
+                                    )
+    
+    developer = models.ForeignKey(Developer, 
+                                  on_delete=models.CASCADE,
+                                 related_name='defect_reports'
+                                 )
