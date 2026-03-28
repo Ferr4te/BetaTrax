@@ -1,0 +1,20 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Developer Dashboard</title>
+    <link rel="stylesheet" href="{% static 'styles/styles.css' %}">
+</head>
+<body>
+    <div class="centered-content">
+        <h1>BetaTrax - Developer</h1>
+        <form action="{% url 'evaluate_defect' %}" method="get">
+            <button type="submit" class="btn">Select New Defect</button>
+        </form>
+        <form action="{% url 'evaluate_defect' %}" method="get">
+            <button type="submit" class="btn">Evaluated Assigned Defect</button>
+        </form>
+    </div>
+</body>
+</html>
