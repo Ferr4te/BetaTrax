@@ -1,10 +1,8 @@
 from django import forms
+from .models import DefectReport
 
-class DefectForm(forms.Form):
-    testerid = forms.CharField(max_length=100)
-    email = forms.EmailField(max_length=254, required=False)
-    version = forms.CharField()
-    title = forms.CharField(max_length=200)
-    description = forms.CharField(widget=forms.Textarea)
-    reproduce_step = forms.CharField(widget=forms.Textarea)
-    defect_date_time = forms.DateTimeField(required=False)
+class DefectForm(forms.ModelForm):
+    class Meta:
+        model = DefectReport
+        fields = '__all__'
+        exclude = ['status','severity','priority','productowner','developer']
