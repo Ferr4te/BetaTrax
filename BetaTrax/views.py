@@ -23,7 +23,7 @@ def defect_view(request):
 def defect_success_view(request):
     return render(request, 'tester/defect_success.html')
 
-# PBl-01
+# PBl-01 (Trying)
 def evaluate_defect(request):
     product = Product.objects.first()
     title = request.data.get('title')
@@ -41,12 +41,53 @@ def evaluate_defect(request):
         tester_email=tester_email,
         status='New'
     )
+    
     return 0
 
+# PBL-02 (Trying)
 def evaluate_defect(request, pk):
     try:
         report = DefectReport.objects.get(pk=pk)
     except DefectReport.DoesNotExist:
         return HttpResponse("Defect report not found.", status=404)
+    
     report.status = 'Open'
     report.save()
+
+    return 0
+
+# PBL-03 (Trying)
+def assign_defect(request, pk):
+    try:
+        report = DefectReport.objects.get(pk=pk)
+    except DefectReport.DoesNotExist:
+        return HttpResponse("Defect report not found.", status=404)
+    
+    report.status = 'Assigned'
+    report.save()
+
+    return 0
+
+# PBL-04 (Trying)
+def mark_fixed(request, pk):
+    try:
+        report = DefectReport.objects.get(pk=pk)
+    except DefectReport.DoesNotExist:
+        return HttpResponse("Defect report not found.", status=404)
+    
+    report.status = 'Fixed'
+    report.save()
+
+    return 0
+
+# PBL-05 (Trying)
+def mark_resolved(request, pk):
+    try:
+        report = DefectReport.objects.get(pk=pk)
+    except DefectReport.DoesNotExist:
+        return HttpResponse("Defect report not found.", status=404)
+    
+    report.status = 'Resolved'
+    report.save()
+
+    return 0
