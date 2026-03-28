@@ -10,7 +10,10 @@
     <div class="centered-content">
         <h1>BetaTrax - Product Owner</h1>
         <form action="{% url 'evaluate_defect' %}" method="get">
-            <button type="submit" class="btn">Evaluate Defect</button>
+            <button type="submit" class="btn">Evaluate New Defect Report</button>
+        </form>
+        <form action="{% url 'evaluate_defect' %}" method="get">
+            <button type="submit" class="btn">Evaluate Fixed Defect</button>
         </form>
     </div>
 </body>
