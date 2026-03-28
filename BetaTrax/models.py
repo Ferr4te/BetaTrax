@@ -2,16 +2,23 @@ from django.db import models
 
 # Create your models here.
 class Product(models.Model):
-    pass
+    def __str__(self):
+        return (f"ProductID:{self.id}")
 
 class ProductOwner(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    def __str__(self):
+        return (f"ProductOwnerID:{self.id}")
 
 class Developer(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    def __str__(self):
+        return (f"DeveloperID:{self.id}")
 
 class BetaTester(models.Model):
     email=models.CharField(max_length=254)
+    def __str__(self):
+        return (f"BetaTesterID:{self.id}")
 
 class DefectReport(models.Model):
     version=models.IntegerField()
@@ -19,6 +26,8 @@ class DefectReport(models.Model):
     description=models.TextField()
     reproduce_step=models.TextField()
     defect_date_time=models.TimeField(auto_now_add=True)
+    def __str__(self):
+        return (f"DefectReportID:{self.id}")
 
     class CurrentStatus(models.TextChoices):
         NEW              = 'New',              'New'
