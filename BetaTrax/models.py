@@ -16,18 +16,17 @@ class Developer(models.Model):
         return (f"DeveloperID:{self.id}")
 
 class BetaTester(models.Model):
-    email=models.CharField(max_length=254)
+    email = models.CharField(max_length=254)
     def __str__(self):
         return (f"BetaTesterID:{self.id}")
 
 class DefectReport(models.Model):
-    version=models.IntegerField()
-    title=models.TextField()
+    tester_email = models.CharField(max_length=254, blank=True, null=True)
+    version=models.CharField(max_length=254)
+    title=models.CharField(max_length=254)
     description=models.TextField()
     reproduce_step=models.TextField()
     defect_date_time=models.TimeField(auto_now_add=True)
-    def __str__(self):
-        return (f"DefectReportID:{self.id}")
 
     class CurrentStatus(models.TextChoices):
         NEW              = 'New',              'New'
@@ -39,6 +38,7 @@ class DefectReport(models.Model):
         RESOLVED         = 'Resolved',         'Resolved'
         REJECTED         = 'Rejected',         'Rejected'
         DUPLICATED       = 'Duplicated',       'Duplicated'
+
 
     class Severity(models.TextChoices):
         CRITICAL = 'Critical', 'Critical'
@@ -56,7 +56,10 @@ class DefectReport(models.Model):
     severity = models.CharField(max_length=10, choices=Severity.choices, null=True, blank=True)
     priority = models.CharField(max_length=10, choices=Priority.choices, null=True, blank=True)
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='defect_reports')
-    betatester = models.ForeignKey(BetaTester, on_delete=models.CASCADE, related_name='defect_reports')
-    productowner = models.ForeignKey(ProductOwner, on_delete=models.CASCADE, related_name='defect_reports')
-    developer = models.ForeignKey(Developer, on_delete=models.CASCADE, related_name='defect_reports')
+    product = models.ForeignKey(Product,on_delete=models.CASCADE,related_name='defect_reports')
+    betatester = models.ForeignKey(BetaTester,on_delete=models.CASCADE,related_name='defect_reports')
+    productowner = models.ForeignKey(ProductOwner, on_delete=models.CASCADE,related_name='defect_reports', null=True, blank=True)
+    developer = models.ForeignKey(Developer, on_delete=models.CASCADE, related_name='defect_reports', null=True, blank=True)
+
+    def __str__(self):
+        return (f"DefectReportID:{self.id}")
