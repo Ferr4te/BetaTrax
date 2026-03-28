@@ -1,0 +1,17 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>HOME</title>
+    <link rel="stylesheet" href="{% static 'styles/styles.css' %}">
+</head>
+<body>
+    <div class="centered-content">
+        <h1>BetaTrax</h1>
+        <form action="{% url 'defectform' %}" method="get">
+            <button type="submit" class="btn">Add New Defect Report</button>
+        </form>
+    </div>
+</body>
+</html>
