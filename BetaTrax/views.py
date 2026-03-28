@@ -1,5 +1,6 @@
 from django.shortcuts import render, HttpResponse, redirect
 from .forms import DefectForm
+from .models import DefectReport
 # Create your views here.
 
 # this is dashboard view function for tester
@@ -11,6 +12,7 @@ def defect_view(request):
     if request.method == "POST":
         form = DefectForm(request.POST)
         if form.is_valid():
+            form.save()
             return redirect('defect-success')
     else:
         form = DefectForm()
