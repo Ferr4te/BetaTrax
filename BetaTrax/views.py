@@ -1,4 +1,4 @@
-from django.shortcuts import render, HttpResponse, redirect
+from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from .forms import DefectForm
 from .models import DefectReport
 # Create your views here.
@@ -22,3 +22,20 @@ def defect_view(request):
 # handle the successful form submission page
 def defect_success_view(request):
     return render(request, 'tester/defect_success.html')
+
+# PBI 4 dashboard view for developer
+def developer_dashboard(request):
+    defects = DefectReport.objects.filter(assigned_to=request.user, status='ASSIGNED')
+
+    return render(request, 'developer/dashboard.html', {'defects': defects})
+
+# PBI 4 handle fixing a defect
+def fix_defect(request, defect_id):
+    defect = get_object_or_404(DefectReport, id=defect_id, assigned_to=request.user, status='ASSIGNED')
+
+    if request.method == 'POST':
+        defect.status = 'FIXED'
+        defect.save()
+        return redirect('developer_dashboard')
+    
+    return render(request, 'developer/fix_confirm.html', {'defect': defect})
