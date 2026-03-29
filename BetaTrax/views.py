@@ -55,6 +55,23 @@ def defect_fix(request, pk):
     serializer = DefectReportSerializer(defect)
     return Response(serializer.data)
 
+# PBI-05 Resolved defect
+@action(detail=True, methods=['post'])
+def resolve(self, request, pk=None):
+    defect = self.get_object()
+    if defect.status != 'FIXED':
+        return Response(
+            {'error': 'Only defects with status "Fixed" can be resolved.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    defect.status = 'RESOLVED'
+    defect.save()
+        
+    serializer = self.get_serializer(defect)
+    return Response(serializer.data)
+
+
 # Helper function to get defect or return 404
 def get_defect_or_404(pk):
     try:
