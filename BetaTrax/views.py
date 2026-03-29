@@ -26,6 +26,18 @@ class DefectReportCreateView(generics.CreateAPIView):
 def defect_success_view(request):
     return render(request, 'tester/defect_success.html')
 
+# PBI-02 Evaluate and accept defect for Product owner =================================
+def owner_dashboard_view(request):
+    return render(request, "owner/owner_dashboard.html" )
+
+def evaluate_defect_page(request):
+    defects = DefectReport.objects.filter(status='New')
+    return render(request, 'owner/owner_evaluate.html', {'defects': defects})
+
+class evaluate_defect_update_view(generics.UpdateAPIView):
+    queryset = DefectReport.objects.all()
+    serializer_class = EvaluateDefectSerializer
+
 # PBI-04 Fix defect
 @api_view(['POST'])
 def defect_fix(request, pk):
