@@ -38,37 +38,35 @@ class evaluate_defect_update_view(generics.RetrieveUpdateAPIView):
     queryset = DefectReport.objects.all()
     serializer_class = EvaluateDefectSerializer
 
-# PBI-04 Fix defect
-@action(detail=True, methods=['PATCH'])
-def defect_fix(request, pk):
-    defect = get_defect_or_404(pk)
-    if defect is None:
+@api_view(['PATCH'])
+def fix_defect(request, pk):
+    try:
+        defect = DefectReport.objects.get(pk=pk)
+    except DefectReport.DoesNotExist:
         return Response({'error': 'Defect not found'}, status=status.HTTP_404_NOT_FOUND)
 
     if defect.status != 'ASSIGNED':
-        return Response({'error': 'Only defects status in "Assigned" can be marked as fixed.'},
+        return Response({'error': 'Only defects with status "Assigned" can be marked as fixed.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
     defect.status = 'FIXED'
     defect.save()
-
     serializer = DefectReportReadOnlySerializer(defect)
     return Response(serializer.data)
 
-# PBI-05 Resolved defect
-@action(detail=True, methods=['PATCH'])
-def resolve(self, request, pk=None):
-    defect = self.get_object()
+@api_view(['PATCH'])
+def resolve_defect(request, pk):
+    try:
+        defect = DefectReport.objects.get(pk=pk)
+    except DefectReport.DoesNotExist:
+        return Response({'error': 'Defect not found'}, status=status.HTTP_404_NOT_FOUND)
 
     if defect.status != 'FIXED':
-        return Response(
-            {'error': 'Only defects with status "Fixed" can be resolved.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-        
+        return Response({'error': 'Only defects with status "Fixed" can be resolved.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
     defect.status = 'RESOLVED'
     defect.save()
-        
     serializer = DefectReportReadOnlySerializer(defect)
     return Response(serializer.data)
 
