@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import DefectReport, Developer
-from .forms import DefectReportSerializer, EvaluateDefectSerializer, CloseDefectSerializer, DefectReportReadOnlySerializer
+from .serializers import DefectReportSerializer, EvaluateDefectSerializer, CloseDefectSerializer, DefectReportReadOnlySerializer
 from rest_framework.response import Response
 from rest_framework import generics, viewsets, status
 from rest_framework.decorators import action, api_view
