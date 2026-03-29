@@ -45,16 +45,33 @@ def defect_fix(request, pk):
     if defect is None:
         return Response({'error': 'Defect not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    if defect.status != 'ASSIGNED':
+    if defect.status != DefectReport.CurrentStatus.ASSIGNED:
         return Response({'error': 'Only defects status in "Assigned" can be marked as fixed.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
-    defect.status = 'FIXED'
-    defect.save()
+    defect.status = DefectReport.CurrentStatus.FIXED
+    defect.save(update_fields=['status'])
 
     serializer = DefectReportSerializer(defect)
     return Response(serializer.data)
 
+
+# PBI-05 Close resolved defect
+@api_view(['POST'])
+def resolve_defect(request, defect_id):
+    defect = get_defect_or_404(defect_id)
+    if defect is None:
+        return Response({'error': 'Defect not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if defect.status != DefectReport.CurrentStatus.FIXED:
+        return Response({'error': 'Only defects with status "Fixed" can be marked as resolved.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    defect.status = DefectReport.CurrentStatus.RESOLVED
+    defect.save(update_fields=['status'])
+
+    serializer = DefectReportSerializer(defect)
+    return Response(serializer.data)
 # Helper function to get defect or return 404
 def get_defect_or_404(pk):
     try:
