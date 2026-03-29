@@ -49,20 +49,3 @@ def get_defect_or_404(pk):
         return DefectReport.objects.get(pk=pk)
     except DefectReport.DoesNotExist:
         return None
-
-# PBI 4 dashboard view for developer =================================
-def developer_dashboard(request):
-    defects = DefectReport.objects.filter(assigned_to=request.user, status='ASSIGNED')
-
-    return render(request, 'developer/dashboard.html', {'defects': defects})
-
-# PBI 4 handle fixing a defect
-def fix_defect(request, defect_id):
-    defect = get_object_or_404(DefectReport, id=defect_id, assigned_to=request.user, status='ASSIGNED')
-
-    if request.method == 'POST':
-        defect.status = 'FIXED'
-        defect.save()
-        return redirect('developer_dashboard')
-    
-    return render(request, 'developer/fix_confirm.html', {'defect': defect})
