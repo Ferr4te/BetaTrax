@@ -38,6 +38,7 @@ class evaluate_defect_update_view(generics.RetrieveUpdateAPIView):
     queryset = DefectReport.objects.all()
     serializer_class = EvaluateDefectSerializer
 
+# PBI-04 Fix defect=================================
 @api_view(['PATCH'])
 def fix_defect(request, pk):
     try:
@@ -54,6 +55,7 @@ def fix_defect(request, pk):
     serializer = DefectReportReadOnlySerializer(defect)
     return Response(serializer.data)
 
+# PBI-05 Resolve defect=================================
 @api_view(['PATCH'])
 def resolve_defect(request, pk):
     try:
