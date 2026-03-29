@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import DefectReport, Developer
-from .forms import DefectReportSerializer, EvaluateDefectSerializer, CloseDefectSerializer
+from .forms import DefectReportSerializer, EvaluateDefectSerializer, CloseDefectSerializer, DefectReportReadOnlySerializer
 from rest_framework.response import Response
 from rest_framework import generics, viewsets, status
 from rest_framework.decorators import action, api_view
@@ -39,7 +39,7 @@ class evaluate_defect_update_view(generics.RetrieveUpdateAPIView):
     serializer_class = EvaluateDefectSerializer
 
 # PBI-04 Fix defect
-@api_view(['POST'])
+@action(detail=True, methods=['PATCH'])
 def defect_fix(request, pk):
     defect = get_defect_or_404(pk)
     if defect is None:
@@ -52,13 +52,14 @@ def defect_fix(request, pk):
     defect.status = 'FIXED'
     defect.save()
 
-    serializer = DefectReportSerializer(defect)
+    serializer = DefectReportReadOnlySerializer(defect)
     return Response(serializer.data)
 
 # PBI-05 Resolved defect
-@action(detail=True, methods=['post'])
+@action(detail=True, methods=['PATCH'])
 def resolve(self, request, pk=None):
     defect = self.get_object()
+
     if defect.status != 'FIXED':
         return Response(
             {'error': 'Only defects with status "Fixed" can be resolved.'},
@@ -68,7 +69,7 @@ def resolve(self, request, pk=None):
     defect.status = 'RESOLVED'
     defect.save()
         
-    serializer = self.get_serializer(defect)
+    serializer = DefectReportReadOnlySerializer(defect)
     return Response(serializer.data)
 
 

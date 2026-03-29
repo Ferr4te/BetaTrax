@@ -16,8 +16,9 @@ class EvaluateDefectSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'title', 'description', 'reproduce_step', 
                            'version', 'tester_email']
 
-class DefectReportSerializer(serializers.ModelSerializer):
+#PBI-04 and PBI-05
+class DefectReportReadOnlySerializer(serializers.ModelSerializer):
     class Meta:
         model = DefectReport
         fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at', 'status']
+        read_only_fields = '__all__'
