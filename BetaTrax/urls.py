@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from .views import DefectReportCreateView
+from .views import evaluate_defect_update_view, close_defect_update_view
 
 #login as tester
 urlpatterns = [
