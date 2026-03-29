@@ -21,4 +21,3 @@ class DefectReportReadOnlySerializer(serializers.ModelSerializer):
     class Meta:
         model = DefectReport
         fields = '__all__'
-        read_only_fields = fields
