@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from .views import DefectReportCreateView
-from .views import evaluate_defect_update_view, close_defect_update_view, fix_defect, resolve_defect
+from .views import evaluate_defect_update_view, fix_defect, resolve_defect#, close_defect_update_view
 
 #login as tester
 urlpatterns = [
@@ -18,7 +18,7 @@ urlpatterns = [
 
     #PBI-03 Select defect to work on
     path('developer/', views.developer_dashboard_view, name='developer_dashboard'),
-    path('developer/defects/<int:pk>/assign/', views.assign_defect_view, name='assign_defect')
+    path('developer/defects/<int:pk>/assign/', views.assign_defect_view, name='assign_defect'),
 
     #PBI-04: Fix defect
     path('api/defects/<int:pk>/fix/', views.fix_defect, name='fix_defect'),

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import DefectReport, Developer
-from .serializers import DefectReportSerializer, EvaluateDefectSerializer, CloseDefectSerializer, DefectReportReadOnlySerializer
+from .serializers import DefectReportSerializer, EvaluateDefectSerializer, DefectReportReadOnlySerializer#, CloseDefectSerializer
 from rest_framework.response import Response
 from rest_framework import generics, viewsets, status
 from rest_framework.decorators import action, api_view
@@ -108,11 +108,11 @@ def fix_defect(request, pk):
     except DefectReport.DoesNotExist:
         return Response({'error': 'Defect not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    if defect.status not in ('ASSIGNED', DefectReport.CurrentStatus.ASSIGNED):
+    if defect.status not in ('Assigned', DefectReport.CurrentStatus.ASSIGNED):
         return Response({'error': 'Only defects with status "Assigned" can be marked as fixed.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
-    defect.status = 'FIXED'
+    defect.status = 'Fixed'
     defect.save()
     serializer = DefectReportReadOnlySerializer(defect)
     return Response(serializer.data)
@@ -125,11 +125,11 @@ def resolve_defect(request, pk):
     except DefectReport.DoesNotExist:
         return Response({'error': 'Defect not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    if defect.status != 'FIXED':
+    if defect.status != 'Fixed':
         return Response({'error': 'Only defects with status "Fixed" can be resolved.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
-    defect.status = 'RESOLVED'
+    defect.status = 'Resolved'
     defect.save()
     serializer = DefectReportReadOnlySerializer(defect)
     return Response(serializer.data)
