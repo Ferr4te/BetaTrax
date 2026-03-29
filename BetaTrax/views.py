@@ -3,27 +3,27 @@ from .forms import DefectForm
 from .models import DefectReport
 # Create your views here.
 
+#PBI-01 submit defect report =================================
 # this is dashboard view function for tester
 def dashboard_view(request):
     return render(request, "tester/dashboard.html" )
 
 # handle the defect report form
-def defect_view(request):
-    if request.method == "POST":
-        form = DefectForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('defect-success')
-    else:
-        form = DefectForm()
-    context = {'form': form}
-    return render(request, 'tester/defectform.html', context)
+class DefectReportCreateView(generics.CreateAPIView):
+    queryset = DefectReport.objects.all()
+    serializer_class = DefectReportSerializer
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return redirect('defect_success')
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # handle the successful form submission page
 def defect_success_view(request):
     return render(request, 'tester/defect_success.html')
 
-# PBI 4 dashboard view for developer
+# PBI 4 dashboard view for developer =================================
 def developer_dashboard(request):
     defects = DefectReport.objects.filter(assigned_to=request.user, status='ASSIGNED')
 
