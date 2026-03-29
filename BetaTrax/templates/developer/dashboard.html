@@ -7,14 +7,43 @@
     <link rel="stylesheet" href="{% static 'styles/styles.css' %}">
 </head>
 <body>
-    <div class="centered-content">
+    <div class="centered-content">    
         <h1>BetaTrax - Developer</h1>
-        <form action="{% url 'evaluate_defect' %}" method="get">
-            <button type="submit" class="btn">Select New Defect</button>
-        </form>
-        <form action="{% url 'evaluate_defect' %}" method="get">
-            <button type="submit" class="btn">Evaluated Assigned Defect</button>
-        </form>
+        
+        {% if developer %}
+            <p>Developer ID: {{ developer.id }}</p>
+            <h2>Open Defects For My Product</h2>
+
+            {% if defects %}
+                <table border="1">
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Version</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                    {% for defect in defects %}
+                        <tr>
+                            <td>{{ defect.id }}</td>
+                            <td>{{ defect.title }}</td>
+                            <td>{{ defect.version }}</td>
+                            <td>{{ defect.status }}</td>
+                            <td>
+                                <form action="{% url 'assign_defect' defect.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn">Select</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No open defects available for your product.</p>
+            {% endif %}
+        {% else %}
+            <p>No developer account found. Please create a Developer record first.</p>
+        {% endif %}
     </div>
 </body>
 </html>
