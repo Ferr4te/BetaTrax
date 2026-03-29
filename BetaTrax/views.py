@@ -1,6 +1,8 @@
-from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
-from .forms import DefectForm
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import DefectReport
+from .forms import DefectReportSerializer
+from rest_framework.response import Response
+from rest_framework import generics
 # Create your views here.
 
 #PBI-01 submit defect report =================================
