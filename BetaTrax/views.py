@@ -32,9 +32,9 @@ def owner_dashboard_view(request):
 
 def evaluate_defect_page(request):
     defects = DefectReport.objects.filter(status='New')
-    return render(request, 'owner/owner_evaluate.html', {'defects': defects})
+    return render(request, 'owner/owner_evaluate_new.html', {'defects': defects})
 
-class evaluate_defect_update_view(generics.UpdateAPIView):
+class evaluate_defect_update_view(generics.RetrieveUpdateAPIView):
     queryset = DefectReport.objects.all()
     serializer_class = EvaluateDefectSerializer
 
