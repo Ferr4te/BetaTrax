@@ -16,9 +16,13 @@ urlpatterns = [
     path('owner/evaluate/', views.evaluate_defect_page, name="owner_defect"),
     path('owner/evaluate/<int:pk>/', evaluate_defect_update_view.as_view(), name="owner_defect_evaluate"),
 
-    # PBI-04: Fix defect
+    #PBI-03 Select defect to work on
+    path('developer/', views.developer_dashboard_view, name='developer_dashboard'),
+    path('developer/defects/<int:pk>/assign/', views.assign_defect_view, name='assign_defect')
+
+    #PBI-04: Fix defect
     path('api/defects/<int:pk>/fix/', views.fix_defect, name='fix_defect'),
     
-    # PBI-05: Resolve defect
+    #PBI-05: Resolve defect
     path('api/defects/<int:pk>/resolve/', views.resolve_defect, name='resolve_defect'),
 ]
