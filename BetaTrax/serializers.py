@@ -11,7 +11,10 @@ class DefectReportSerializer(serializers.ModelSerializer):
 class EvaluateDefectSerializer(serializers.ModelSerializer):
     class Meta:
         model = DefectReport
-        fields = ['status', 'severity', 'priority']
+        fields = ['id', 'title', 'description', 'reproduce_step', 'version', 
+                  'tester_email', 'status', 'severity', 'priority']
+        read_only_fields = ['id', 'title', 'description', 'reproduce_step', 
+                           'version', 'tester_email']
 
 class DefectReportSerializer(serializers.ModelSerializer):
     class Meta:
