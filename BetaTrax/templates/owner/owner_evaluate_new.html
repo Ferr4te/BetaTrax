@@ -16,7 +16,7 @@
         <td>{{ defect.version }}</td>
         <td>{{ defect.tester_email }}</td>
         <td>
-            <a href="{% url 'owner_defect_evaluate_new' defect.id %}">
+            <a href="{% url 'owner_defect_evaluate' defect.id %}">
                 <button>Select</button>
             </a>
         </td>
