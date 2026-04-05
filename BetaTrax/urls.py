@@ -25,4 +25,8 @@ urlpatterns = [
     
     #PBI-05: Resolve defect
     path('defects/<int:pk>/resolve/', views.resolve_defect, name='resolve_defect'),
+
+    #PBI-06
+    path('api/defects/new/', views.NewDefectListView.as_view(), name='new_defects'),
+    path('api/defects/<int:pk>/', views.DefectDetailView.as_view(), name='defect_detail'),
 ]
