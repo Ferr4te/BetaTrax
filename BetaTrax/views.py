@@ -134,6 +134,15 @@ def resolve_defect(request, pk):
     serializer = DefectReportReadOnlySerializer(defect)
     return Response(serializer.data)
 
+#PBI-06
+class NewDefectListView(generics.ListAPIView):
+    serializer_class = DefectReportReadOnlySerializer
+    def get_queryset(self):
+        return DefectReport.objects.filter(status=DefectReport.CurrentStatus.NEW)
+
+class DefectDetailView(generics.RetrieveAPIView):
+    queryset = DefectReport.objects.all()
+    serializer_class = DefectReportReadOnlySerializer
 
 # Helper function to get defect or return 404
 def get_defect_or_404(pk):
