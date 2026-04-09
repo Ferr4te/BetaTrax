@@ -1,10 +1,15 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
-from .views import DefectReportCreateView
-from .views import evaluate_defect_update_view, fix_defect, resolve_defect#, close_defect_update_view
+from .views import DefectReportCreateView, DefectReportViewSet
+from .views import evaluate_defect_update_view#, close_defect_update_view
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'defects', DefectReportViewSet)
 
 #login as tester
 urlpatterns = [
+    path('api/', include(router.urls)),
     #login as tester
     #PBI-01 submite defect report
     path('tester/', views.dashboard_view, name="tester_dashboard"),
@@ -20,11 +25,8 @@ urlpatterns = [
     path('developer/', views.developer_dashboard_view, name='developer_dashboard'),
     path('developer/defects/<int:pk>/assign/', views.assign_defect_view, name='assign_defect'),
 
-    #PBI-04: Fix defect
-    path('defects/<int:pk>/fix/', views.fix_defect, name='fix_defect'),
-    
-    #PBI-05: Resolve defect
-    path('defects/<int:pk>/resolve/', views.resolve_defect, name='resolve_defect'),
+    # Delete url for PBI-04 and PBI-05 since fix and resolve inside
+    # DefectReportViewSet already can access to PBI-04 and PBI-05 pages
 
     #PBI-06
     path('api/defects/new/', views.NewDefectListView.as_view(), name='new_defects'),

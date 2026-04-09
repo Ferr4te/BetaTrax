@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import DefectReport, Developer
 from .serializers import DefectReportSerializer, EvaluateDefectSerializer, DefectReportReadOnlySerializer
 from rest_framework.response import Response
-from rest_framework import generics, viewsets, status
+from rest_framework import generics, viewsets, status, filters
 from rest_framework.decorators import action, api_view
+from django_filters.rest_framework import DjangoFilterBackend
 # Create your views here.
 
 #PBI-01 submit defect report =================================
@@ -99,40 +100,6 @@ def assign_defect_view(request, pk):
         defect.save(update_fields=['status', 'developer'])
 
     return redirect(f"/developer/?developer_id={developer.id}")
-    
-# PBI-04 Fix defect=================================
-@api_view(['PATCH'])
-def fix_defect(request, pk):
-    try:
-        defect = DefectReport.objects.get(pk=pk)
-    except DefectReport.DoesNotExist:
-        return Response({'error': 'Defect not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    if defect.status != DefectReport.CurrentStatus.ASSIGNED:
-        return Response({'error': 'Only defects with status "Assigned" can be marked as fixed.'},
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    defect.status = DefectReport.CurrentStatus.FIXED
-    defect.save()
-    serializer = DefectReportReadOnlySerializer(defect)
-    return Response(serializer.data)
-    
-# PBI-05 Resolve defect=================================
-@api_view(['PATCH'])
-def resolve_defect(request, pk):
-    try:
-        defect = DefectReport.objects.get(pk=pk)
-    except DefectReport.DoesNotExist:
-        return Response({'error': 'Defect not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    if defect.status != DefectReport.CurrentStatus.FIXED:
-        return Response({'error': 'Only defects with status "Fixed" can be resolved.'},
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    defect.status = DefectReport.CurrentStatus.RESOLVED
-    defect.save()
-    serializer = DefectReportReadOnlySerializer(defect)
-    return Response(serializer.data)
 
 #PBI-06
 class NewDefectListView(generics.ListAPIView):
@@ -150,3 +117,59 @@ def get_defect_or_404(pk):
         return DefectReport.objects.get(pk=pk)
     except DefectReport.DoesNotExist:
         return None
+
+# FilterSet for DefectReport to support filtering
+# api/defects/ is the url showing all the defects
+class DefectReportViewSet(viewsets.ModelViewSet):
+    queryset = DefectReport.objects.all()
+    serializer_class = DefectReportSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['severity', 'priority']
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'status']
+
+    # Override get_queryset to handle case-insensitive status filtering
+    # For example: api/defects/?status=fixed
+    # We use ?status=fixed that would show defects status = 'fixed'
+    # You guys can check check try try
+    # So it should be the answer for "showing list wihtout html"?
+    # Since it could enter different page that only show the list with that status
+    # It can use in all steps, should be
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            # url no lowercase so capitalize here to aviod changing the model.py stored choice values
+            normalized = status_param.capitalize()
+            queryset = queryset.filter(status=normalized)
+        return queryset
+
+    # PBI-04: Fix defect
+    # For example: api/defects/1/ we can see the details of the defect report with id=1
+    # We have a select button to trigger action (fix/resolve) called "Extra Action"
+    @action(detail=True, methods=['patch'])
+    def fix(self, request, pk=None):
+        defect = self.get_object()
+        if defect.status != DefectReport.CurrentStatus.ASSIGNED:
+            return Response(
+                {'error': 'Only defects with status "Assigned" can be marked as fixed.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        defect.status = DefectReport.CurrentStatus.FIXED
+        defect.save()
+        serializer = DefectReportReadOnlySerializer(defect)
+        return Response(serializer.data)
+
+    # PBI-05: Resolve defect
+    @action(detail=True, methods=['patch'])
+    def resolve(self, request, pk=None):
+        defect = self.get_object()
+        if defect.status != DefectReport.CurrentStatus.FIXED:
+            return Response(
+                {'error': 'Only defects with status "Fixed" can be resolved.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        defect.status = DefectReport.CurrentStatus.RESOLVED
+        defect.save()
+        serializer = DefectReportReadOnlySerializer(defect)
+        return Response(serializer.data)
