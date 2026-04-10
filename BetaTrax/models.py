@@ -32,7 +32,7 @@ class DefectReport(models.Model):
         null=True,
         blank=True,
         related_name='duplicates',
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         help_text='If this defect is a duplicate, link to the original report.',
     )
     
