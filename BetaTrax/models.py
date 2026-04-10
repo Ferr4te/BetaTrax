@@ -26,7 +26,7 @@ class DefectReport(models.Model):
     title=models.CharField(max_length=254)
     description=models.TextField()
     reproduce_step=models.TextField()
-    defect_date_time=models.TimeField(auto_now_add=True)
+    defect_date_time=models.DateTimeField(auto_now_add=True)
 
     class CurrentStatus(models.TextChoices):
         NEW              = 'New',              'New'
