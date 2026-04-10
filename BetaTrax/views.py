@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import generics, viewsets, status, filters
 from rest_framework.decorators import action, api_view
 from django_filters.rest_framework import DjangoFilterBackend
+from .notification import send_defect_status_change_notification
 # Create your views here.
 
 #PBI-01 submit defect report =================================
@@ -172,12 +173,14 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['patch'])
     def fix(self, request, pk=None):
         defect = self.get_object()
+        old_status = defect.status
         if defect.status != DefectReport.CurrentStatus.ASSIGNED:
             return Response(
                 {'error': 'Only defects with status "Assigned" can be marked as fixed.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         defect.status = DefectReport.CurrentStatus.FIXED
+        send_defect_status_change_notification(defect, old_status, defect.status)
         defect.save()
         serializer = DefectReportReadOnlySerializer(defect)
         return Response(serializer.data)
@@ -186,12 +189,14 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['patch'])
     def resolve(self, request, pk=None):
         defect = self.get_object()
+        old_status = defect.status
         if defect.status != DefectReport.CurrentStatus.FIXED:
             return Response(
                 {'error': 'Only defects with status "Fixed" can be resolved.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         defect.status = DefectReport.CurrentStatus.RESOLVED
+        send_defect_status_change_notification(defect, old_status, defect.status)
         defect.save()
         serializer = DefectReportReadOnlySerializer(defect)
         return Response(serializer.data)
