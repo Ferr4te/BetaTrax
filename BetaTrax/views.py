@@ -142,6 +142,9 @@ class DefectReportViewSet(viewsets.ModelViewSet):
             # url no lowercase so capitalize here to aviod changing the model.py stored choice values
             normalized = status_param.capitalize()
             queryset = queryset.filter(status=normalized)
+        #PBI-07 exclude the rejected defect reports from the list
+        else:
+            queryset = queryset.exclude(status=DefectReport.CurrentStatus.REJECTED)
         return queryset
 
     # PBI-04: Fix defect
