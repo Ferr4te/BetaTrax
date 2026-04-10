@@ -4,6 +4,7 @@ from .views import DefectReportCreateView, DefectReportViewSet
 from .views import evaluate_defect_update_view#, close_defect_update_view
 from rest_framework.routers import DefaultRouter
 
+# Register the viewset with a router
 router = DefaultRouter()
 router.register(r'defects', DefectReportViewSet)
 
