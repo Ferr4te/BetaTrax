@@ -135,6 +135,13 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     # So it should be the answer for "showing list wihtout html"?
     # Since it could enter different page that only show the list with that status
     # It can use in all steps, should be
+    
+    #PBI-02 evaluate
+    def get_serializer_class(self):
+        if self.action == 'evaluate':
+            return EvaluateDefectSerializer
+        return DefectReportSerializer
+    
     def get_queryset(self):
         queryset = super().get_queryset()
         status_param = self.request.query_params.get('status')
@@ -147,6 +154,18 @@ class DefectReportViewSet(viewsets.ModelViewSet):
             queryset = queryset.exclude(status=DefectReport.CurrentStatus.REJECTED)
         return queryset
 
+    #PBI-02 evaluate
+    @action(detail=True, methods=['patch'])
+    def evaluate(self, request, pk=None):
+        defect = self.get_object()
+        if defect.status != DefectReport.CurrentStatus.NEW:
+            return Response({"error": "Only NEW defects can be evaluated"}, status=400)
+        serializer = EvaluateDefectSerializer(defect, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    
     # PBI-04: Fix defect
     # For example: api/defects/1/ we can see the details of the defect report with id=1
     # We have a select button to trigger action (fix/resolve) called "Extra Action"
