@@ -27,7 +27,15 @@ class DefectReport(models.Model):
     description=models.TextField()
     reproduce_step=models.TextField()
     defect_date_time=models.DateTimeField(auto_now_add=True)
-
+    duplicate_of = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        related_name='duplicates',
+        on_delete=models.SET_NULL,
+        help_text='If this defect is a duplicate, link to the original report.',
+    )
+    
     class CurrentStatus(models.TextChoices):
         NEW              = 'New',              'New'
         OPEN             = 'Open',             'Open'
@@ -38,15 +46,6 @@ class DefectReport(models.Model):
         RESOLVED         = 'Resolved',         'Resolved'
         REJECTED         = 'Rejected',         'Rejected'
         DUPLICATED       = 'Duplicated',       'Duplicated'
-
-        duplicate_of = models.ForeignKey(
-        'self',
-        null=True,
-        blank=True,
-        related_name='duplicates',
-        on_delete=models.SET_NULL,
-        help_text='If this defect is a duplicate, link to the original report.',
-    )
 
     class Severity(models.TextChoices):
         CRITICAL = 'Critical', 'Critical'
