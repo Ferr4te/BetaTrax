@@ -39,6 +39,14 @@ class DefectReport(models.Model):
         REJECTED         = 'Rejected',         'Rejected'
         DUPLICATED       = 'Duplicated',       'Duplicated'
 
+        duplicate_of = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        related_name='duplicates',
+        on_delete=models.SET_NULL,
+        help_text='If this defect is a duplicate, link to the original report.',
+    )
 
     class Severity(models.TextChoices):
         CRITICAL = 'Critical', 'Critical'
@@ -52,7 +60,7 @@ class DefectReport(models.Model):
         MEDIUM   = 'Medium',   'Medium'
         LOW      = 'Low',      'Low'
 
-    status = models.CharField(max_length=20, choices=CurrentStatus.choices, default=CurrentStatus.NEW)
+    status = models.CharField(max_length=64, choices=CurrentStatus.choices, default=CurrentStatus.NEW)
     severity = models.CharField(max_length=10, choices=Severity.choices, null=True, blank=True)
     priority = models.CharField(max_length=10, choices=Priority.choices, null=True, blank=True)
 
