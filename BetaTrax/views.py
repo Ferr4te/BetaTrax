@@ -184,6 +184,22 @@ class DefectReportViewSet(viewsets.ModelViewSet):
         defect.save()
         serializer = DefectReportReadOnlySerializer(defect)
         return Response(serializer.data)
+    
+    # PBI-10: Cannot reproduce defect
+    @action(detail=True, methods=['patch'])
+    def cannot_reproduce(self, request, pk=None):
+        defect = self.get_object()
+        old_status = defect.status
+        if defect.status != DefectReport.CurrentStatus.ASSIGNED:
+            return Response(
+                {'error': 'Only defects with status "Assigned" can be marked as cannot reproduce.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        defect.status = DefectReport.CurrentStatus.CANNOT_REPRODUCE
+        send_defect_status_change_notification(defect, old_status, defect.status)
+        defect.save()
+        serializer = DefectReportReadOnlySerializer(defect)
+        return Response(serializer.data)
 
     # PBI-05: Resolve defect
     @action(detail=True, methods=['patch'])
@@ -196,6 +212,24 @@ class DefectReportViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         defect.status = DefectReport.CurrentStatus.RESOLVED
+        send_defect_status_change_notification(defect, old_status, defect.status)
+        defect.save()
+        serializer = DefectReportReadOnlySerializer(defect)
+        return Response(serializer.data)
+    
+    # PBI-11: Reopen defect
+    @action(detail=True, methods=['patch'])
+    def reopen(self, request, pk=None):
+        defect = self.get_object()
+        old_status = defect.status
+        if defect.status != DefectReport.CurrentStatus.FIXED:
+            return Response(
+                {'error': 'Only defects with status "Fixed" can be reopened.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        defect.status = DefectReport.CurrentStatus.REOPENED
+        # clear the assigned developer when reopening a defect
+        defect.developer = None
         send_defect_status_change_notification(defect, old_status, defect.status)
         defect.save()
         serializer = DefectReportReadOnlySerializer(defect)
