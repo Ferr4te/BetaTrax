@@ -6,6 +6,7 @@ from rest_framework import generics, viewsets, status, filters
 from rest_framework.decorators import action, api_view
 from django_filters.rest_framework import DjangoFilterBackend
 from .notification import send_defect_status_change_notification
+from .permissions import IsProductOwner, IsDeveloper, IsBetaTester
 # Create your views here.
 
 #PBI-01 submit defect report =================================

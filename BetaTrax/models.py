@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Create your models here.
 class Product(models.Model):
@@ -6,16 +7,19 @@ class Product(models.Model):
         return (f"ProductID:{self.id}")
 
 class ProductOwner(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='productowner')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     def __str__(self):
         return (f"ProductOwnerID:{self.id}")
 
 class Developer(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='developer')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     def __str__(self):
         return (f"DeveloperID:{self.id}")
 
 class BetaTester(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='betatester')
     email = models.CharField(max_length=254)
     def __str__(self):
         return (f"BetaTesterID:{self.id}")
