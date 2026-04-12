@@ -3,8 +3,9 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 class Product(models.Model):
+    name = models.CharField(max_length=254, unique=True, null=True, blank=True)
     def __str__(self):
-        return (f"ProductID:{self.id}")
+        return (f"ProductID:{self.id} - {self.name}" if self.name else f"ProductID:{self.id}")
 
 class ProductOwner(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='productowner')
@@ -72,5 +73,28 @@ class DefectReport(models.Model):
     productowner = models.ForeignKey(ProductOwner, on_delete=models.CASCADE,related_name='defect_reports', null=True, blank=True)
     developer = models.ForeignKey(Developer, on_delete=models.CASCADE, related_name='defect_reports', null=True, blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    duplicate_of = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='duplicates'
+    )
     def __str__(self):
         return (f"DefectReportID:{self.id}")
+    
+# PBI-12 Comment Model
+class Comment(models.Model):
+    defect = models.ForeignKey(DefectReport, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Comment on Defect {self.defect.id} by {self.author.username}"
