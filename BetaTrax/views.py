@@ -7,6 +7,7 @@ from rest_framework.decorators import action, api_view
 from django_filters.rest_framework import DjangoFilterBackend
 from .notification import send_defect_status_change_notification
 from .permissions import IsProductOwner, IsDeveloper, IsBetaTester
+from rest_framework.permissions import IsAuthenticated
 # Create your views here.
 
 #PBI-01 submit defect report =================================
@@ -133,10 +134,6 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     # Override get_queryset to handle case-insensitive status filtering
     # For example: api/defects/?status=fixed
     # We use ?status=fixed that would show defects status = 'fixed'
-    # You guys can check check try try
-    # So it should be the answer for "showing list wihtout html"?
-    # Since it could enter different page that only show the list with that status
-    # It can use in all steps, should be
     
     #PBI-02 evaluate
     def get_serializer_class(self):
@@ -171,7 +168,7 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     # PBI-04: Fix defect
     # For example: api/defects/1/ we can see the details of the defect report with id=1
     # We have a select button to trigger action (fix/resolve) called "Extra Action"
-    @action(detail=True, methods=['patch'])
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsDeveloper])
     def fix(self, request, pk=None):
         defect = self.get_object()
         old_status = defect.status
@@ -187,7 +184,7 @@ class DefectReportViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     # PBI-10: Cannot reproduce defect
-    @action(detail=True, methods=['patch'])
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsDeveloper])
     def cannot_reproduce(self, request, pk=None):
         defect = self.get_object()
         old_status = defect.status
@@ -203,7 +200,7 @@ class DefectReportViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     # PBI-05: Resolve defect
-    @action(detail=True, methods=['patch'])
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsProductOwner])
     def resolve(self, request, pk=None):
         defect = self.get_object()
         old_status = defect.status
@@ -219,7 +216,7 @@ class DefectReportViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     # PBI-11: Reopen defect
-    @action(detail=True, methods=['patch'])
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsProductOwner])
     def reopen(self, request, pk=None):
         defect = self.get_object()
         old_status = defect.status
