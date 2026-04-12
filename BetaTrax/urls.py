@@ -1,16 +1,24 @@
 from django.urls import path, include
 from . import views
-from .views import DefectReportCreateView, DefectReportViewSet
+from .views import DefectReportCreateView, DefectReportViewSet, ProductViewSet, CommentViewSet
 from .views import evaluate_defect_update_view#, close_defect_update_view
 from rest_framework.routers import DefaultRouter
+from rest_framework_nested import routers
 
 # Register the viewset with a router
 router = DefaultRouter()
-router.register(r'defects', DefectReportViewSet)
+router.register(r'defects', DefectReportViewSet, basename = 'defect')
+router.register(r'products', ProductViewSet, basename='product')
+
+# Nested Router for Comments
+defect_router = routers.NestedDefaultRouter(router, 'defects', lookup='defect')
+defect_router.register('comments', CommentViewSet, basename='defect-comment')
 
 #login as tester
 urlpatterns = [
     path('api/', include(router.urls)),
+    path('api/', include(defect_router.urls)),
+
     #login as tester
     #PBI-01 submite defect report
     path('tester/', views.dashboard_view, name="tester_dashboard"),
