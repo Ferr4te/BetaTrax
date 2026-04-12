@@ -71,8 +71,12 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def validate_name(self, value):
         """Prevent duplicate product names (case-insensitive)"""
-        if Product.objects.filter(name__iexact=value).exists():
-            raise serializers.ValidationError("Product with this name already exists.")
+        if self.instance:
+            if Product.objects.filter(name__iexact=value).exclude(pk=self.instance.pk).exists():
+                raise serializers.ValidationError("Product with this name already exists.")
+        else:  # Creating new product
+            if Product.objects.filter(name__iexact=value).exists():
+                raise serializers.ValidationError("Product with this name already exists.")
         return value
 
 # PBI-12 Comment Serializer
