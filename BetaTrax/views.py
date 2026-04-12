@@ -1,11 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import DefectReport, Developer
-from .serializers import DefectReportSerializer, EvaluateDefectSerializer, DefectReportReadOnlySerializer
+from .models import DefectReport, Developer, Product, Comment
+from .serializers import (
+    DefectReportSerializer, 
+    EvaluateDefectSerializer, 
+    DefectReportReadOnlySerializer,
+    ProductSerializer,
+    CommentSerializer
+)
 from rest_framework.response import Response
 from rest_framework import generics, viewsets, status, filters
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from django_filters.rest_framework import DjangoFilterBackend
 from .notification import send_defect_status_change_notification
+from rest_framework.permissions import BasePermission 
 from .permissions import IsProductOwner, IsDeveloper, IsBetaTester
 from rest_framework.permissions import IsAuthenticated
 # Create your views here.
@@ -165,6 +172,58 @@ class DefectReportViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
     
+    # PBI-07: Reject defect
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsProductOwner])
+    def reject(self, request, pk=None):
+        """Product owner rejects an invalid defect report."""
+        defect = self.get_object()
+        
+        # Check permission
+        if defect.productowner != request.user.productowner:
+            return Response({'error': 'No permission'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if defect.status not in [DefectReport.CurrentStatus.NEW, DefectReport.CurrentStatus.OPEN]:
+            return Response(
+                {'error': f'Cannot reject status {defect.status}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        old_status = defect.status
+        defect.status = DefectReport.CurrentStatus.REJECTED
+        send_defect_status_change_notification(defect, old_status, defect.status)
+        defect.save()
+        
+        serializer = DefectReportReadOnlySerializer(defect)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    # PBI-08: Mark as duplicate
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsProductOwner])
+    def mark_duplicate(self, request, pk=None):
+        """Product owner marks a defect as duplicated."""
+        defect = self.get_object()
+        
+        # Check permission
+        if defect.productowner != request.user.productowner:
+            return Response({'error': 'No permission'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if defect.status not in [DefectReport.CurrentStatus.NEW, DefectReport.CurrentStatus.OPEN]:
+            return Response(
+                {'error': f'Cannot mark duplicate status {defect.status}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = EvaluateDefectSerializer(defect, data=request.data, partial=True)
+        if serializer.is_valid():
+            old_status = defect.status
+            serializer.validated_data['status'] = DefectReport.CurrentStatus.DUPLICATED
+            updated_defect = serializer.save()
+            
+            send_defect_status_change_notification(updated_defect, old_status, updated_defect.status)
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     # PBI-04: Fix defect
     # For example: api/defects/1/ we can see the details of the defect report with id=1
     # We have a select button to trigger action (fix/resolve) called "Extra Action"
@@ -232,3 +291,28 @@ class DefectReportViewSet(viewsets.ModelViewSet):
         defect.save()
         serializer = DefectReportReadOnlySerializer(defect)
         return Response(serializer.data)
+
+#PBI-09 Product Viewset
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:  # GET methods
+            return [IsAuthenticated()]  # Any authenticated user can view
+        else:  # POST, PATCH, DELETE
+            return [IsProductOwner()]  # Only product owners can modify
+
+# PBI-12 Comment ViewSet
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Get comments for a specific defect"""
+        defect_id = self.kwargs.get('defect_pk')
+        return Comment.objects.filter(defect_id=defect_id)
+    
+    def perform_create(self, serializer):
+        """Save comment with defect reference"""
+        defect_id = self.kwargs.get('defect_pk')
+        serializer.save(defect_id=defect_id)
