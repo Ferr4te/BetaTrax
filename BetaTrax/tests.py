@@ -5,16 +5,23 @@ import json
 
 from django.test import TestCase
 from django.urls import reverse
+from django.contrib.auth.models import User
+import json
 
-from .models import BetaTester, DefectReport, Developer, Product, ProductOwner
+from .models import BetaTester, DefectReport, Developer, Product, ProductOwner, Comment
 
 
 class SprintOnePBITests(TestCase):
 	def setUp(self):
+	# CREATE USERS FIRST
+		self.tester_user = User.objects.create_user(username='tester1', password='pass123')
+		self.po_user = User.objects.create_user(username='po1', password='pass123')
+		self.dev_user = User.objects.create_user(username='dev1', password='pass123')
+
 		self.product = Product.objects.create()
-		self.tester = BetaTester.objects.create(email='tester@example.com')
-		self.owner = ProductOwner.objects.create(product=self.product)
-		self.developer = Developer.objects.create(product=self.product)
+		self.tester = BetaTester.objects.create(user=self.tester_user, email='tester@example.com')
+		self.owner = ProductOwner.objects.create(user=self.po_user, product=self.product)
+		self.developer = Developer.objects.create(user=self.dev_user, product=self.product)
 
 	def create_new_defect(self, **overrides):
 		defaults = {
@@ -24,6 +31,7 @@ class SprintOnePBITests(TestCase):
 			'version': '1.0.0',
 			'product': self.product,
 			'betatester': self.tester,
+			'productowner':self.owner
 		}
 		defaults.update(overrides)
 		return DefectReport.objects.create(**defaults)
@@ -97,7 +105,7 @@ class SprintOnePBITests(TestCase):
 			developer=self.developer,
 		)
 
-		response = self.client.patch(reverse('fix_defect', kwargs={'pk': defect.id}))
+		response = self.client.patch(reverse('defect-fix', kwargs={'pk': defect.id}))
 
 		self.assertEqual(response.status_code, 200)
 		defect.refresh_from_db()
@@ -106,8 +114,78 @@ class SprintOnePBITests(TestCase):
 	def test_pbi_05_close_fixed_defect_as_resolved(self):
 		defect = self.create_new_defect(status=DefectReport.CurrentStatus.FIXED)
 
-		response = self.client.patch(reverse('resolve_defect', kwargs={'pk': defect.id}))
+		response = self.client.patch(reverse('defect-resolve', kwargs={'pk': defect.id}))
 
 		self.assertEqual(response.status_code, 200)
 		defect.refresh_from_db()
 		self.assertEqual(defect.status, DefectReport.CurrentStatus.RESOLVED)
+	
+	def test_pbi_07_reject_defect(self):
+		defect = self.create_new_defect(status=DefectReport.CurrentStatus.NEW)
+
+		# Login as product owner first
+		self.client.force_login(self.po_user)
+
+		response = self.client.patch(
+        	reverse('defect-reject', kwargs={'pk': defect.id}),  # Changed from 'defect-reject'
+        	data=json.dumps({}),
+        	content_type='application/json',
+    	)
+
+		self.assertEqual(response.status_code, 200)
+		defect.refresh_from_db()
+		self.assertEqual(defect.status, DefectReport.CurrentStatus.REJECTED)
+		self.assertIsNone(defect.duplicate_of)
+
+	def test_pbi_08_mark_defect_as_duplicate(self):
+		original_defect = self.create_new_defect(
+            title='Original Bug',
+            status=DefectReport.CurrentStatus.OPEN
+        )
+		duplicate_defect = self.create_new_defect(
+            title='Duplicate Bug',
+            status=DefectReport.CurrentStatus.NEW
+        )
+        
+		    # Login as product owner first
+		self.client.force_login(self.po_user)
+
+		response = self.client.patch(
+            reverse('defect-mark-duplicate', kwargs={'pk': duplicate_defect.id}),
+            data=json.dumps({
+                'status': DefectReport.CurrentStatus.DUPLICATED,
+                'duplicate_of': original_defect.id,
+            }),
+            content_type='application/json',
+        )
+        
+		self.assertEqual(response.status_code, 200)
+		duplicate_defect.refresh_from_db()
+		self.assertEqual(duplicate_defect.status, DefectReport.CurrentStatus.DUPLICATED)
+		self.assertEqual(duplicate_defect.duplicate_of_id, original_defect.id)
+	
+	def test_pbi_09_register_product(self):
+		
+		self.client.force_login(self.po_user)
+		response = self.client.post(
+            reverse('product-list'),
+            data=json.dumps({'name': 'Mobile App'}),
+            content_type='application/json',
+        )
+		
+		self.assertEqual(response.status_code, 201)
+		self.assertTrue(Product.objects.filter(name='Mobile App').exists())
+
+	def test_pbi_12_add_comment_to_defect(self):
+		defect = self.create_new_defect()
+		self.client.force_login(self.po_user)
+        
+		response = self.client.post(
+            reverse('defect-comment-list', kwargs={'defect_pk': defect.id}),
+            data=json.dumps({'text': 'This is a critical issue'}),
+            content_type='application/json',
+        )
+        
+		self.assertEqual(response.status_code, 201)
+		self.assertTrue(Comment.objects.filter(defect=defect, text='This is a critical issue').exists())
+    
