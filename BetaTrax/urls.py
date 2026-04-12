@@ -1,7 +1,7 @@
 from django.urls import path, include
 from . import views
 from .views import DefectReportCreateView, DefectReportViewSet, ProductViewSet, CommentViewSet
-from .views import evaluate_defect_update_view#, close_defect_update_view
+from .views import evaluate_defect_update_view
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
 

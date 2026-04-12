@@ -146,7 +146,10 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'evaluate':
             return EvaluateDefectSerializer
-        return DefectReportSerializer
+        elif self.action in ['fix', 'resolve', 'assign', 'cannot_reproduce', 'reopen']:
+            return DefectReportReadOnlySerializer
+        else:
+            return DefectReportReadOnlySerializer
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -187,9 +190,11 @@ class DefectReportViewSet(viewsets.ModelViewSet):
         if defect.developer:
             return Response({'error': 'Already assigned'}, status=400)
     
+        old_status = defect.status
         defect.status = DefectReport.CurrentStatus.ASSIGNED
         defect.developer = developer
         defect.save()
+        send_defect_status_change_notification(defect, old_status, defect.status)
     
         return Response({'message': 'Assigned successfully'})
     
@@ -246,20 +251,21 @@ class DefectReportViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # PBI-04: Fix defect
-    # For example: api/defects/1/ we can see the details of the defect report with id=1
-    # We have a select button to trigger action (fix/resolve) called "Extra Action"
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsDeveloper])
     def fix(self, request, pk=None):
         defect = self.get_object()
-        old_status = defect.status
+
         if defect.status != DefectReport.CurrentStatus.ASSIGNED:
             return Response(
                 {'error': 'Only defects with status "Assigned" can be marked as fixed.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        old_status = defect.status
         defect.status = DefectReport.CurrentStatus.FIXED
         send_defect_status_change_notification(defect, old_status, defect.status)
         defect.save()
+
         serializer = DefectReportReadOnlySerializer(defect)
         return Response(serializer.data)
     
@@ -267,12 +273,14 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsDeveloper])
     def cannot_reproduce(self, request, pk=None):
         defect = self.get_object()
-        old_status = defect.status
+        
         if defect.status != DefectReport.CurrentStatus.ASSIGNED:
             return Response(
                 {'error': 'Only defects with status "Assigned" can be marked as cannot reproduce.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        old_status = defect.status
         defect.status = DefectReport.CurrentStatus.CANNOT_REPRODUCE
         send_defect_status_change_notification(defect, old_status, defect.status)
         defect.save()
@@ -283,12 +291,14 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsProductOwner])
     def resolve(self, request, pk=None):
         defect = self.get_object()
-        old_status = defect.status
+        
         if defect.status != DefectReport.CurrentStatus.FIXED:
             return Response(
                 {'error': 'Only defects with status "Fixed" can be resolved.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        old_status = defect.status
         defect.status = DefectReport.CurrentStatus.RESOLVED
         send_defect_status_change_notification(defect, old_status, defect.status)
         defect.save()
@@ -299,12 +309,14 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsProductOwner])
     def reopen(self, request, pk=None):
         defect = self.get_object()
-        old_status = defect.status
+        
         if defect.status != DefectReport.CurrentStatus.FIXED:
             return Response(
                 {'error': 'Only defects with status "Fixed" can be reopened.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        old_status = defect.status
         defect.status = DefectReport.CurrentStatus.REOPENED
         # clear the assigned developer when reopening a defect
         defect.developer = None
