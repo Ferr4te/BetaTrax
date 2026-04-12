@@ -104,6 +104,8 @@ class SprintOnePBITests(TestCase):
 			status=DefectReport.CurrentStatus.ASSIGNED,
 			developer=self.developer,
 		)
+		
+		self.client.force_login(self.developer.user)
 
 		response = self.client.patch(reverse('defect-fix', kwargs={'pk': defect.id}))
 
@@ -113,6 +115,8 @@ class SprintOnePBITests(TestCase):
 
 	def test_pbi_05_close_fixed_defect_as_resolved(self):
 		defect = self.create_new_defect(status=DefectReport.CurrentStatus.FIXED)
+
+		self.client.force_login(self.po_user)
 
 		response = self.client.patch(reverse('defect-resolve', kwargs={'pk': defect.id}))
 
@@ -178,6 +182,7 @@ class SprintOnePBITests(TestCase):
 
 	def test_pbi_12_add_comment_to_defect(self):
 		defect = self.create_new_defect()
+		
 		self.client.force_login(self.po_user)
         
 		response = self.client.post(
