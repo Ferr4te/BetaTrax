@@ -75,14 +75,7 @@ class DefectReport(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    duplicate_of = models.ForeignKey(
-        'self',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='duplicates'
-    )
+    
     def __str__(self):
         return (f"DefectReportID:{self.id}")
     
