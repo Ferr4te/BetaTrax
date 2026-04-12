@@ -171,6 +171,27 @@ class DefectReportViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+
+    # PBI-03: Assign
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsDeveloper])
+    def assign(self, request, pk=None):
+        defect = self.get_object()
+        developer = request.user.developer
+    
+        if defect.product_id != developer.product_id:
+            return Response({'error': 'Not your product'}, status=403)
+    
+        if defect.status != DefectReport.CurrentStatus.OPEN:
+            return Response({'error': 'Only OPEN defects can be assigned'}, status=400)
+    
+        if defect.developer:
+            return Response({'error': 'Already assigned'}, status=400)
+    
+        defect.status = DefectReport.CurrentStatus.ASSIGNED
+        defect.developer = developer
+        defect.save()
+    
+        return Response({'message': 'Assigned successfully'})
     
     # PBI-07: Reject defect
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsProductOwner])
