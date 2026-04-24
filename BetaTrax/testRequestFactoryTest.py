@@ -37,9 +37,10 @@ class DefectReportViewSetTests(APITestCase):
 	def test_pbi_06_retrieve_defectreportdetail(self):
 		request = self.factory.get(f'/api/defects/{self.defect.id}/')
 		view = DefectReportViewSet.as_view({'get': 'retrieve'})
-		response = view(request, pk=self.defect.id)
+		response = view(request, pk=self.defectreport.id)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		# need add
+		self.assertEqual(response.data['id'], self.defectreport.id)
+		self.assertEqual(response.data['title'], 'Crash on launch')
 		
 	def test_pbi_01_create_defectreport(self):
 		data = {
@@ -55,6 +56,9 @@ class DefectReportViewSetTests(APITestCase):
 		response = view(request)
 		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 		self.assertIn('Login issue', str(response.data))
+		self.assertEqual(DefectReport.objects.count(), 2)
+		new_defect = DefectReport.objects.get(title='Login issue')
+		self.assertEqual(new_defect.version, '1.0.0')
 
 	def test_pbi_02_update_defectreport(self):
 		data = {
@@ -62,9 +66,12 @@ class DefectReportViewSetTests(APITestCase):
 			'severity': DefectReport.Severity.MAJOR,
 			'priority': DefectReport.Priority.HIGH,
 		}
-		request = self.factory.put(f'/api/defects/{self.defect.id}/', data, format='json')
-		view = DefectReportViewSet.as_view({'put': 'update'})
+		request = self.factory.patch(f'/api/defects/{self.defect.id}/', data, format='json')
+		view = DefectReportViewSet.as_view({'patch': 'partial_update'})
 		response = view(request, pk=self.defectreport.id)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		# need add
+		self.defectreport.refresh_from_db()
+		self.assertEqual(self.defectreport.status, DefectReport.CurrentStatus.OPEN)
+		self.assertEqual(self.defectreport.severity, DefectReport.Severity.MAJOR)
+		self.assertEqual(self.defectreport.priority, DefectReport.Priority.HIGH)
 		
