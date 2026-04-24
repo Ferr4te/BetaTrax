@@ -47,9 +47,8 @@ class DefectReportViewSetTests(APITestCase):
 			'description':'Cannot login with valid password',
 			'reproduce_step':'Open app; login with valid account',
 			'version':'1.0.0',
-			'product':self.product,
-			'betatester':self.tester,
-			'productowner':self.owner
+			'product':self.product.id,
+			'betatester':self.tester.id,
 		}
 		request = self.factory.post('/api/defects/', data, format='json')
 		view = DefectReportViewSet.as_view({'post': 'create'})
@@ -65,7 +64,7 @@ class DefectReportViewSetTests(APITestCase):
 		}
 		request = self.factory.put(f'/api/defects/{self.defect.id}/', data, format='json')
 		view = DefectReportViewSet.as_view({'put': 'update'})
-		response = view(request, pk=self.product.id)
+		response = view(request, pk=self.defectreport.id)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		# need add
 		
