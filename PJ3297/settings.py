@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_filters',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -139,7 +140,18 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
+    'PAGE_SIZE': 10,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'BetaTrax API',
+    'DESCRIPTION': 'API for managing defect reports, products, etc.',
+    'VERSION': '1.0.0',
+    'EXCLUDE_PATH': [
+        r'^/admin/',          # Django admin
+        r'^/api/schema/',     # the schema itself 
+    ],
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

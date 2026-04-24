@@ -4,6 +4,7 @@ from .views import DefectReportCreateView, DefectReportViewSet, ProductViewSet, 
 from .views import evaluate_defect_update_view
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 # Register the viewset with a router
 router = DefaultRouter()
@@ -18,6 +19,13 @@ defect_router.register('comments', CommentViewSet, basename='defect-comment')
 urlpatterns = [
     path('api/', include(router.urls)),
     path('api/', include(defect_router.urls)),
+
+    #API documentation endpoint
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/schema/redoc/',SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
+
 
     #login as tester
     #PBI-01 submite defect report
