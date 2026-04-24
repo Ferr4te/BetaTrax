@@ -1,0 +1,950 @@
+openapi: 3.0.3
+info:
+  title: BetaTrax
+  version: 1.0.0
+  description: API for managing defect reports, products, and comments, organised by different user roles.
+tags:
+  - name: Tester
+    description: >-
+      submit new defect reports.
+  - name: Product Owner
+    description: >-
+      view new defects, evaluate, reject, mark duplicates,
+      resolve, reopen defects, register and list products, and add or view comments.
+  - name: Developer
+    description: >-
+      pick defects, mark defects as fixed or cannot
+      reproduce, and add or view comments.
+paths:
+  # ========== Tester ==========
+  /api/defects/:
+    post:
+      operationId: defects_create
+      summary: PBI-01 – Submit a new defect report (Beta Tester)
+      tags:
+        - Tester
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DefectReport'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DefectReport'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DefectReport'
+        required: true
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+        - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefectReport'
+          description: ''
+
+  # ========== Product Owner ==========
+  /api/defects/new/:
+    get:
+      operationId: defects_new_list
+      summary: PBI-06 – List all "New" defects waiting for evaluation (Product Owner)
+      parameters:
+        - name: page
+          required: false
+          in: query
+          description: A page number within the paginated result set.
+          schema:
+            type: integer
+      tags:
+        - Product Owner
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDefectReportReadOnlyList'
+          description: ''
+
+  /api/defects/{id}/:
+    get:
+      operationId: defects_retrieve
+      summary: PBI-06 – Get full details of a single defect (Product Owner)
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this defect report.
+          required: true
+      tags:
+        - Product Owner
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefectReportReadOnly'
+          description: ''
+
+  /api/defects/{id}/evaluate/:
+    patch:
+      operationId: defects_evaluate_partial_update
+      summary: PBI-02 – Evaluate a defect (set status, severity, priority) and accept it (Product Owner)
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this defect report.
+          required: true
+      tags:
+        - Product Owner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEvaluateDefect'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEvaluateDefect'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEvaluateDefect'
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluateDefect'
+          description: ''
+
+  /api/defects/{id}/reject/:
+    patch:
+      operationId: defects_reject_partial_update
+      summary: PBI-07 – Product owner rejects an invalid defect report (Product Owner)
+      description: Product owner rejects an invalid defect report.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this defect report.
+          required: true
+      tags:
+        - Product Owner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefectReportReadOnly'
+          description: ''
+
+  /api/defects/{id}/mark_duplicate/:
+    patch:
+      operationId: defects_mark_duplicate_partial_update
+      summary: PBI-08 – Product owner marks a defect as duplicate and links to the original (Product Owner)
+      description: Product owner marks a defect as duplicated.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this defect report.
+          required: true
+      tags:
+        - Product Owner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefectReportReadOnly'
+          description: ''
+
+  /api/defects/{id}/resolve/:
+    patch:
+      operationId: defects_resolve_partial_update
+      summary: PBI-05 – Product owner marks a fixed defect as resolved (Product Owner)
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this defect report.
+          required: true
+      tags:
+        - Product Owner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefectReportReadOnly'
+          description: ''
+
+  /api/defects/{id}/reopen/:
+    patch:
+      operationId: defects_reopen_partial_update
+      summary: PBI-11 – Product owner reopens a fixed defect that still occurs (Product Owner)
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this defect report.
+          required: true
+      tags:
+        - Product Owner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefectReportReadOnly'
+          description: ''
+
+  # ========== Developer ==========
+  /api/defects/{id}/assign/:
+    post:
+      operationId: defects_assign_create
+      summary: PBI-03 – Developer selects and assigns themselves to an open defect (Developer)
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this defect report.
+          required: true
+      tags:
+        - Developer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DefectReportReadOnly'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DefectReportReadOnly'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DefectReportReadOnly'
+        required: true
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefectReportReadOnly'
+          description: ''
+
+  /api/defects/{id}/fix/:
+    patch:
+      operationId: defects_fix_partial_update
+      summary: PBI-04 – Developer marks an assigned defect as fixed (Developer)
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this defect report.
+          required: true
+      tags:
+        - Developer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefectReportReadOnly'
+          description: ''
+
+  /api/defects/{id}/cannot_reproduce/:
+    patch:
+      operationId: defects_cannot_reproduce_partial_update
+      summary: PBI-10 – Developer marks defect as "Cannot Reproduce" (Developer)
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this defect report.
+          required: true
+      tags:
+        - Developer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDefectReportReadOnly'
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefectReportReadOnly'
+          description: ''
+
+  # ========== Shared: Product Owner & Developer (Comments) ==========
+  /api/defects/{defect_pk}/comments/:
+    get:
+      operationId: defects_comments_list
+      summary: PBI-12 – List all comments for a defect (Product Owner, Developer)
+      parameters:
+        - in: path
+          name: defect_pk
+          schema:
+            type: integer
+          required: true
+        - name: page
+          required: false
+          in: query
+          description: A page number within the paginated result set.
+          schema:
+            type: integer
+      tags:
+        - Product Owner
+        - Developer
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCommentList'
+          description: ''
+    post:
+      operationId: defects_comments_create
+      summary: PBI-12 – Add a new comment to a defect (Product Owner, Developer)
+      parameters:
+        - in: path
+          name: defect_pk
+          schema:
+            type: integer
+          required: true
+      tags:
+        - Product Owner
+        - Developer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Comment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Comment'
+        required: true
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+          description: ''
+
+  # ========== Product Owner (Product Management) ==========
+  /api/products/:
+    get:
+      operationId: products_list
+      summary: PBI-09 – List all registered products (Product Owner)
+      parameters:
+        - name: page
+          required: false
+          in: query
+          description: A page number within the paginated result set.
+          schema:
+            type: integer
+      tags:
+        - Product Owner
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+    post:
+      operationId: products_create
+      summary: PBI-09 – Register a new product (unique name required) (Product Owner)
+      tags:
+        - Product Owner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Product'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+
+components:
+  schemas:
+    BlankEnum:
+      enum:
+        - ''
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+        author:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - author
+        - created_at
+        - id
+        - text
+    DefectReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        tester_email:
+          type: string
+          nullable: true
+          maxLength: 254
+        version:
+          type: string
+          maxLength: 254
+        title:
+          type: string
+          maxLength: 254
+        description:
+          type: string
+        reproduce_step:
+          type: string
+        defect_date_time:
+          type: string
+          format: date-time
+          readOnly: true
+        product:
+          type: integer
+        betatester:
+          type: integer
+      required:
+        - betatester
+        - defect_date_time
+        - description
+        - product
+        - reproduce_step
+        - title
+        - version
+    DefectReportReadOnly:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        comments:
+          type: string
+          readOnly: true
+        tester_email:
+          type: string
+          nullable: true
+          maxLength: 254
+        version:
+          type: string
+          maxLength: 254
+        title:
+          type: string
+          maxLength: 254
+        description:
+          type: string
+        reproduce_step:
+          type: string
+        defect_date_time:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        severity:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/SeverityEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        priority:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/PriorityEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        duplicate_of:
+          type: integer
+          nullable: true
+          description: If this defect is a duplicate, link to the original report.
+        product:
+          type: integer
+        betatester:
+          type: integer
+        productowner:
+          type: integer
+          nullable: true
+        developer:
+          type: integer
+          nullable: true
+      required:
+        - betatester
+        - comments
+        - created_at
+        - defect_date_time
+        - description
+        - id
+        - product
+        - reproduce_step
+        - title
+        - updated_at
+        - version
+    EvaluateDefect:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        reproduce_step:
+          type: string
+          readOnly: true
+        version:
+          type: string
+          readOnly: true
+        tester_email:
+          type: string
+          readOnly: true
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        severity:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/SeverityEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        priority:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/PriorityEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        duplicate_of:
+          type: integer
+          nullable: true
+      required:
+        - description
+        - id
+        - reproduce_step
+        - tester_email
+        - title
+        - version
+    NullEnum:
+      enum:
+        - null
+    PaginatedCommentList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+    PaginatedDefectReportReadOnlyList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DefectReportReadOnly'
+    PaginatedProductList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    PatchedComment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+        author:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedDefectReportReadOnly:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        comments:
+          type: string
+          readOnly: true
+        tester_email:
+          type: string
+          nullable: true
+          maxLength: 254
+        version:
+          type: string
+          maxLength: 254
+        title:
+          type: string
+          maxLength: 254
+        description:
+          type: string
+        reproduce_step:
+          type: string
+        defect_date_time:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        severity:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/SeverityEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        priority:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/PriorityEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        duplicate_of:
+          type: integer
+          nullable: true
+          description: If this defect is a duplicate, link to the original report.
+        product:
+          type: integer
+        betatester:
+          type: integer
+        productowner:
+          type: integer
+          nullable: true
+        developer:
+          type: integer
+          nullable: true
+    PatchedEvaluateDefect:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        reproduce_step:
+          type: string
+          readOnly: true
+        version:
+          type: string
+          readOnly: true
+        tester_email:
+          type: string
+          readOnly: true
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        severity:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/SeverityEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        priority:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/PriorityEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        duplicate_of:
+          type: integer
+          nullable: true
+    PatchedProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          nullable: true
+          maxLength: 254
+    PriorityEnum:
+      enum:
+        - Critical
+        - High
+        - Medium
+        - Low
+      type: string
+      description: |-
+        * `Critical` - Critical
+        * `High` - High
+        * `Medium` - Medium
+        * `Low` - Low
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          nullable: true
+          maxLength: 254
+      required:
+        - id
+        - name
+    SeverityEnum:
+      enum:
+        - Critical
+        - Major
+        - Minor
+        - Low
+      type: string
+      description: |-
+        * `Critical` - Critical
+        * `Major` - Major
+        * `Minor` - Minor
+        * `Low` - Low
+    StatusEnum:
+      enum:
+        - New
+        - Open
+        - Assigned
+        - CannotReproduce
+        - Fixed
+        - Reopened
+        - Resolved
+        - Rejected
+        - Duplicated
+      type: string
+      description: |-
+        * `New` - New
+        * `Open` - Open
+        * `Assigned` - Assigned
+        * `CannotReproduce` - Cannot Reproduce
+        * `Fixed` - Fixed
+        * `Reopened` - Reopened
+        * `Resolved` - Resolved
+        * `Rejected` - Rejected
+        * `Duplicated` - Duplicated
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
