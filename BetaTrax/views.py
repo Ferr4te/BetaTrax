@@ -349,3 +349,206 @@ class CommentViewSet(viewsets.ModelViewSet):
         """Save comment with defect reference"""
         defect_id = self.kwargs.get('defect_pk')
         serializer.save(defect_id=defect_id)
+
+#PBI-18
+class DeveloperEffectivenessViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated, IsProductOwner]
+    
+    def get_developer_metrics(self, developer):
+        """Get effectiveness metrics for a single developer"""
+        metrics = developer.get_effectiveness_metrics()
+        
+        return {
+            'developer_id': developer.id,
+            'developer_name': developer.user.username,
+            'total_fixed': metrics['fixed_count'],
+            'total_reopened': metrics['reopened_count'],
+            'ratio': metrics['ratio'],
+            'classification': metrics['classification'],
+            'message': metrics.get('message')
+        }
+
+    @action(detail=False, methods=['get'], url_path='effectiveness/(?P<developer_id>[^/.]+)')
+    def developer_effectiveness(self, request, developer_id=None):
+        # Verify product owner has access to this developer's product
+        try:
+            developer = get_object_or_404(Developer, id=developer_id)
+        except ValueError:
+            return Response(
+                {'error': 'Invalid developer ID format'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if the requesting product owner belongs to the same product
+        if not request.user.is_superuser:
+            if not hasattr(request.user, 'productowner'):
+                return Response(
+                    {'error': 'You do not have permission to view developer metrics'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            if request.user.productowner.product_id != developer.product_id:
+                return Response(
+                    {'error': 'You can only view developers from your own product'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
+        metrics_data = self.get_developer_metrics(developer)
+        serializer = DeveloperEffectivenessSerializer(metrics_data)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='effectiveness')
+    def all_developers_effectiveness(self, request):
+        # Determine which developers to show
+        if request.user.is_superuser:
+            developers = Developer.objects.all()
+        else:
+            if not hasattr(request.user, 'productowner'):
+                return Response(
+                    {'error': 'You do not have permission to view developer metrics'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            developers = Developer.objects.filter(product=request.user.productowner.product)
+        
+        results = []
+        for developer in developers:
+            metrics_data = self.get_developer_metrics(developer)
+            results.append(metrics_data)
+        
+        # Sort by ratio (worst first for visibility)
+        results.sort(key=lambda x: x['ratio'] if x['ratio'] is not None else float('inf'), reverse=True)
+        
+        serializer = DeveloperEffectivenessSerializer(results, many=True)
+        
+        # Add summary statistics
+        summary = self._get_summary_statistics(results)
+        
+        return Response({
+            'developers': serializer.data,
+            'summary': summary
+        })
+
+    def _get_summary_statistics(self, metrics_list):
+        """Calculate summary statistics from metrics list"""
+        valid_metrics = [m for m in metrics_list if m['ratio'] is not None]
+        
+        if not valid_metrics:
+            return {
+                'total_developers': len(metrics_list),
+                'developers_with_sufficient_data': 0,
+                'average_ratio': None,
+                'good_count': 0,
+                'fair_count': 0,
+                'poor_count': 0,
+                'insufficient_count': len([m for m in metrics_list if m['ratio'] is None])
+            }
+        
+        good_count = len([m for m in valid_metrics if m['classification'] == 'Good'])
+        fair_count = len([m for m in valid_metrics if m['classification'] == 'Fair'])
+        poor_count = len([m for m in valid_metrics if m['classification'] == 'Poor'])
+        
+        avg_ratio = sum(m['ratio'] for m in valid_metrics) / len(valid_metrics)
+        
+        return {
+            'total_developers': len(metrics_list),
+            'developers_with_sufficient_data': len(valid_metrics),
+            'average_ratio': round(avg_ratio, 6),
+            'good_count': good_count,
+            'fair_count': fair_count,
+            'poor_count': poor_count,
+            'insufficient_count': len([m for m in metrics_list if m['ratio'] is None])
+        }
+
+class DeveloperViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Developer.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Developer.objects.all()
+        if hasattr(user, 'productowner'):
+            return Developer.objects.filter(product=user.productowner.product)
+        return Developer.objects.none()
+    
+    @action(detail=True, methods=['get'], url_path='effectiveness')
+    def effectiveness(self, request, pk=None):
+        developer = self.get_object()
+        
+        # Check permission
+        if not request.user.is_superuser:
+            if hasattr(request.user, 'productowner'):
+                if request.user.productowner.product_id != developer.product_id:
+                    return Response(
+                        {'error': 'You can only view developers from your own product'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            else:
+                return Response(
+                    {'error': 'You do not have permission to view developer metrics'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
+        metrics = developer.get_effectiveness_metrics()
+        
+        response_data = {
+            'developer_id': developer.id,
+            'developer_name': developer.user.username,
+            'developer_email': developer.user.email,
+            'product_id': developer.product.id,
+            'product_name': developer.product.name if developer.product.name else f"Product {developer.product.id}",
+            'total_fixed': metrics['fixed_count'],
+            'total_reopened': metrics['reopened_count'],
+            'ratio': metrics['ratio'],
+            'classification': metrics['classification'],
+        }
+        
+        if metrics.get('message'):
+            response_data['message'] = metrics['message']
+        
+        return Response(response_data)
+
+    @action(detail=False, methods=['get'], url_path='effectiveness/all')
+    def all_effectiveness(self, request):
+        if request.user.is_superuser:
+            developers = Developer.objects.all()
+        elif hasattr(request.user, 'productowner'):
+            developers = Developer.objects.filter(product=request.user.productowner.product)
+        else:
+            return Response(
+                {'error': 'You do not have permission to view developer metrics'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        results = []
+        for developer in developers:
+            metrics = developer.get_effectiveness_metrics()
+            results.append({
+                'developer_id': developer.id,
+                'developer_name': developer.user.username,
+                'total_fixed': metrics['fixed_count'],
+                'total_reopened': metrics['reopened_count'],
+                'ratio': metrics['ratio'],
+                'classification': metrics['classification'],
+            })
+        
+        # Calculate summary
+        valid_results = [r for r in results if r['ratio'] is not None]
+        summary = {
+            'total_developers': len(results),
+            'developers_with_sufficient_data': len(valid_results),
+            'good_count': len([r for r in valid_results if r['classification'] == 'Good']),
+            'fair_count': len([r for r in valid_results if r['classification'] == 'Fair']),
+            'poor_count': len([r for r in valid_results if r['classification'] == 'Poor']),
+        }
+        
+        if valid_results:
+            summary['average_ratio'] = round(
+                sum(r['ratio'] for r in valid_results) / len(valid_results), 6
+            )
+        else:
+            summary['average_ratio'] = None
+        
+        return Response({
+            'developers': results,
+            'summary': summary
+        })
