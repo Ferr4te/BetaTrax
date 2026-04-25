@@ -66,7 +66,7 @@ class DefectReportViewSetTests(APITestCase):
 			'severity': DefectReport.Severity.MAJOR,
 			'priority': DefectReport.Priority.HIGH,
 		}
-		request = self.factory.patch(f'/api/defects/{self.defect.id}/', data, format='json')
+		request = self.factory.patch(f'/api/defects/{self.defectreport.id}/', data, format='json')
 		view = DefectReportViewSet.as_view({'patch': 'partial_update'})
 		response = view(request, pk=self.defectreport.id)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
