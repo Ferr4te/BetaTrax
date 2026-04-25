@@ -93,3 +93,13 @@ class CommentSerializer(serializers.ModelSerializer):
         """Automatically set author to current user"""
         validated_data['author'] = self.context['request'].user
         return super().create(validated_data)
+
+# PBI-18
+class DeveloperEffectivenessSerializer(serializers.Serializer):
+    developer_id = serializers.IntegerField()
+    developer_name = serializers.CharField()
+    total_fixed = serializers.IntegerField()
+    total_reopened = serializers.IntegerField()
+    ratio = serializers.FloatField()
+    classification = serializers.CharField()
+    message = serializers.CharField(required=False)
