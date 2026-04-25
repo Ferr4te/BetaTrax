@@ -10,6 +10,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 router = DefaultRouter()
 router.register(r'defects', DefectReportViewSet, basename = 'defect')
 router.register(r'products', ProductViewSet, basename='product')
+router.register(r'developers', DeveloperViewSet, basename='developer')
 
 # Nested Router for Comments
 defect_router = routers.NestedDefaultRouter(router, 'defects', lookup='defect')
