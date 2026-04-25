@@ -19,8 +19,6 @@ class Developer(models.Model):
     def __str__(self):
         return (f"DeveloperID:{self.id}")
 
-    }")
-
     # PBI-18: Get effectiveness metrics for this developer
     def get_effectiveness_metrics(self):
         """
