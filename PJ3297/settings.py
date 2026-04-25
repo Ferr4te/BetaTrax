@@ -30,22 +30,30 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
-INSTALLED_APPS = [
-    'BetaTrax.apps.BetatraxConfig',
-    'rest_framework',
+# Split apps into shared and tenant-specific for public and private parts of django-tenants
+SHARED_APPS = [
+    'django_tenants',
+    'customers',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'django_filters',
     'drf_spectacular',
 ]
 
+TENANT_APPS = [
+    'BetaTrax.apps.BetatraxConfig',
+]
+
+INSTALLED_APPS = SHARED_APPS + TENANT_APPS
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django_tenants.middleware.main.TenantMainMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -79,7 +87,7 @@ WSGI_APPLICATION = 'PJ3297.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django_tenants.postgresql_backend',
         'NAME': 'betatrax',         
         'USER': 'comp3297',        
         'PASSWORD': '123',     
@@ -159,3 +167,10 @@ SPECTACULAR_SETTINGS = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'betatraxmanagement@gmail.com'
+
+DATABASE_ROUTERS = (
+    'django_tenants.routers.TenantSyncRouter',
+)
+
+TENANT_MODEL = "customers.Client"
+TENANT_DOMAIN_MODEL = "customers.Domain"
