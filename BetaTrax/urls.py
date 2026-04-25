@@ -29,7 +29,5 @@ urlpatterns = [
     # Delete url for PBI-04 and PBI-05 since fix and resolve inside
     # DefectReportViewSet already can access to PBI-04 and PBI-05 pages
 
-    #PBI-06
-    path('api/defects/new/', views.NewDefectListView.as_view(), name='new_defects'),
-    path('api/defects/<int:pk>/', views.DefectDetailView.as_view(), name='defect_detail'),
+    # Delete unnessary urls that messing up test cases
 ]

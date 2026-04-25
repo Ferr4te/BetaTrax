@@ -1,78 +1,78 @@
 from django_tenants.test.cases import TenantTestCase
+from django_tenants.test.client import TenantClient
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
-from django_tenants.utils import tenant_context, schema_context # Import schema_context
+from django_tenants.utils import tenant_context, schema_context
 
 from customers.models import Client as Tenant, Domain
 from BetaTrax.models import Product, BetaTester, DefectReport
 
+
 class TenantFilteringTest(TenantTestCase):
     def setUp(self):
-        # TenantTestCase automatically creates self.tenant and self.domain for you.
-        # We will use the auto-created one as Tenant 1.
-        self.tenant1 = self.tenant 
-        
-        # We need to create Tenant 2 in the 'public' schema context
+        super().setUp() # creates public schema + test tenant + domain
+
+        # create a second tenant in the public schema
         with schema_context('public'):
+            # tenant 1 domain 
+            Domain.objects.create(
+                domain='tenant1.localhost',
+                tenant=self.tenant,
+                is_primary=True
+            )
+
+            # tenant 2 domain
             self.tenant2 = Tenant.objects.create(
                 schema_name='test_tenant2',
                 name='Tenant 2'
             )
-            Domain.objects.create(domain='tenant2.localhost:8000', tenant=self.tenant2)
+            Domain.objects.create(
+                domain='tenant2.localhost',
+                tenant=self.tenant2,
+                is_primary=True
+            )
 
-        # Create objects for Tenant 1 (The default test tenant)
-        with tenant_context(self.tenant1):
-            user1 = User.objects.create_user('tester1', password='testpass')
-            self.tester1 = BetaTester.objects.create(user=user1, email='tester1@example.com')
-            self.product1 = Product.objects.create(name='Product 1')
+        # populate tenant 1 (the auto‑created one) with data
+        with tenant_context(self.tenant):
+            self.user1 = User.objects.create_user('tester1', password='pass')
+            self.tester1 = BetaTester.objects.create(
+                user=self.user1, email='tester1@example.com'
+            )
+            self.product1 = Product.objects.create(name='Product A')
             self.defect_tenant1 = DefectReport.objects.create(
                 version='1.0',
                 title='Defect in Tenant1',
-                description='Test defect',
+                description='Test',
                 reproduce_step='step',
                 product=self.product1,
                 betatester=self.tester1,
-                status=DefectReport.CurrentStatus.NEW # Ensure status is 'New' for PBI-15
+                status=DefectReport.CurrentStatus.NEW,
             )
-            self.client1 = APIClient()
-            self.client1.defaults['HTTP_HOST'] = 'testserver' # TenantTestCase uses 'testserver' by default
-            self.client1.force_login(user1)
 
-        # Create objects for Tenant 2
+        # populate tenant 2 (no defects)
         with tenant_context(self.tenant2):
-            user2 = User.objects.create_user('tester2', password='testpass')
-            self.tester2 = BetaTester.objects.create(user=user2, email='tester2@example.com')
-            self.product2 = Product.objects.create(name='Product 2')
-            
-            self.client2 = APIClient()
-            # No Defect report fot tenant 2
-            self.client2.defaults['HTTP_HOST'] = 'tenant2.localhost:8000'
-            self.client2.force_login(user2)
+            self.user2 = User.objects.create_user('tester2', password='pass')
+            self.tester2 = BetaTester.objects.create(
+                user=self.user2, email='tester2@example.com'
+            )
+            self.product2 = Product.objects.create(name='Product B')
 
-    # ========== PBI‑15 ==========
+        # create tenant‑aware clients (using TenantClient makes hostname automatic)
+        self.client1 = TenantClient(self.tenant, HTTP_HOST='tenant1.localhost')
+        self.client2 = TenantClient(self.tenant2, HTTP_HOST='tenant2.localhost')
+        self.client1.force_login(self.user1)
+        self.client2.force_login(self.user2)
+
+    # ==================== PBI‑15 ====================
     def test_tenant_filtering(self):
-        """PBI-15: Lists and views show only the current tenant's data."""
         # Tenant1 sees its defect
-        resp = self.client1.get('/api/defects/', HTTP_HOST='tenant2.localhost')
-        
+        resp = self.client1.get('/api/defects/', {'status': 'New'})
+
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data['results']), 1)
         self.assertEqual(resp.data['results'][0]['id'], self.defect_tenant1.id)
 
-        # Tenant2 sees an empty list
-        resp = self.client2.get('/api/defects/')
+        # Tenant2 sees empty list
+        resp = self.client2.get('/api/defects/', {'status': 'New'})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data['results']), 0)
-    # ========== PBI‑16 ==========
-#    def test_cross_tenant_access_prevented(self):
-#        """PBI-16: Attempting to access another tenant's data returns 404."""
-#        # Tenant2 tries to retrieve tenant1's defect detail
-#        resp = self.client2.get(f'/api/defects/{self.defect_tenant1.id}/')
-#        self.assertEqual(resp.status_code, 404)
 
-        # (Optional) Also verify modification is blocked
-#        patch_resp = self.client2.patch(
-#            f'/api/defects/{self.defect_tenant1.id}/',
-#            {'status': 'Open'}, format='json'
-#        )
-#        self.assertEqual(patch_resp.status_code, 404)

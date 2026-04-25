@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-vy8oh8bj06mn89_kz)d5^1vb!7$&2@136r#v_wpsw-!x12sixn
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['tenant1.localhost', 'tenant2.localhost', 'localhost', '127.0.0.1'] #for test case to work (PBI 15/16)
 
 
 # Application definition
@@ -52,8 +52,8 @@ TENANT_APPS = [
 INSTALLED_APPS = SHARED_APPS + TENANT_APPS
 
 MIDDLEWARE = [
+    'django_tenants.middleware.main.TenantMainMiddleware', # fixed order for tenant tests (PBI15/16)
     'django.middleware.security.SecurityMiddleware',
-    'django_tenants.middleware.main.TenantMainMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

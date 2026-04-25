@@ -17,11 +17,6 @@ from .permissions import IsProductOwner, IsDeveloper, IsBetaTester
 from rest_framework.permissions import IsAuthenticated
 # Create your views here.
 
-#PBI-01 submit defect report =================================
-# this is dashboard view function for tester
-def dashboard_view(request):
-    return render(request, "tester/dashboard.html" )
-
 # handle the defect report form
 class DefectReportCreateView(generics.CreateAPIView):
     queryset = DefectReport.objects.all()
@@ -32,18 +27,6 @@ class DefectReportCreateView(generics.CreateAPIView):
             serializer.save()
             return redirect('defect_success')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# handle the successful form submission page
-def defect_success_view(request):
-    return render(request, 'tester/defect_success.html')
-
-# PBI-02 Evaluate and accept defect for Product owner =================================
-def owner_dashboard_view(request):
-    return render(request, "owner/owner_dashboard.html" )
-
-def evaluate_defect_page(request):
-    defects = DefectReport.objects.filter(status='New')
-    return render(request, 'owner/owner_evaluate_new.html', {'defects': defects})
 
 class evaluate_defect_update_view(generics.RetrieveUpdateAPIView):
     queryset = DefectReport.objects.all()
@@ -142,6 +125,14 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     # For example: api/defects/?status=fixed
     # We use ?status=fixed that would show defects status = 'fixed'
     
+    # old method removed, this is for adding new defect
+    # with the same route: GET /api/defects/new/
+    @action(detail=False, methods=['get'], url_path='new')
+    def new_defects(self, request):
+        queryset = self.get_queryset().filter(status=DefectReport.CurrentStatus.NEW)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)    
+
     #PBI-02 evaluate
     def get_serializer_class(self):
         if self.action == 'evaluate':
