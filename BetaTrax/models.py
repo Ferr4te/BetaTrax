@@ -19,6 +19,61 @@ class Developer(models.Model):
     def __str__(self):
         return (f"DeveloperID:{self.id}")
 
+    }")
+
+    # PBI-18: Get effectiveness metrics for this developer
+    def get_effectiveness_metrics(self):
+        """
+        Calculate effectiveness metrics for the developer.
+        
+        Returns:
+            dict: Contains fixed_count, reopened_count, ratio, and classification
+        """
+        # Count defects fixed by this developer
+        fixed_defects = DefectReport.objects.filter(
+            developer=self,
+            status=DefectReport.CurrentStatus.FIXED
+        )
+        fixed_count = fixed_defects.count()
+        
+        # Count defects reopened that were assigned to this developer
+        # A defect is considered reopened if it has ever been in REOPENED status
+        # and was assigned to this developer
+        reopened_defects = DefectReport.objects.filter(
+            developer=self,
+            status=DefectReport.CurrentStatus.REOPENED
+        )
+        reopened_count = reopened_defects.count()
+        
+        # Check for insufficient data (fewer than 20 fixed defects)
+        if fixed_count < 20:
+            return {
+                'fixed_count': fixed_count,
+                'reopened_count': reopened_count,
+                'ratio': None,
+                'classification': 'Insufficient data',
+                'message': f'Developer has fixed {fixed_count} defects. Need at least 20 fixed defects for meaningful metric.'
+            }
+        
+        # Calculate ratio (reopened / fixed)
+        ratio = reopened_count / fixed_count if fixed_count > 0 else 0
+        
+        # Determine classification based on ratio
+        if ratio < 0.03125:
+            classification = 'Good'
+        elif ratio < 0.125:
+            classification = 'Fair'
+        else:
+            classification = 'Poor'
+        
+        return {
+            'fixed_count': fixed_count,
+            'reopened_count': reopened_count,
+            'ratio': round(ratio, 6),
+            'classification': classification,
+            'message': None
+        }
+
 class BetaTester(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='betatester')
     email = models.CharField(max_length=254)

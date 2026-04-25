@@ -1,6 +1,6 @@
 from django.urls import path, include
 from . import views
-from .views import DefectReportCreateView, DefectReportViewSet, ProductViewSet, CommentViewSet
+from .views import DefectReportCreateView, DefectReportViewSet, ProductViewSet, CommentViewSet, DeveloperEffectivenessViewSet, DeveloperViewSet
 from .views import evaluate_defect_update_view
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
@@ -10,6 +10,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 router = DefaultRouter()
 router.register(r'defects', DefectReportViewSet, basename = 'defect')
 router.register(r'products', ProductViewSet, basename='product')
+router.register(r'developers', DeveloperViewSet, basename='developer')
 
 # Nested Router for Comments
 defect_router = routers.NestedDefaultRouter(router, 'defects', lookup='defect')
