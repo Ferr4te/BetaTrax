@@ -1,8 +1,12 @@
 from django.core.management.base import BaseCommand
 from customers.models import Client, Domain
 
+# Just a quick way to use this sample database structure setup for tenants
 # Use python manage.py setup_tenants to create the public tenant and a test tenant with the domain mapping
 # Since the public didn't contain any data, so we create the test tenant with the domain mapping to localhost
+
+# python manage.py migrate_schemas --shared for SHARED_APPS
+# python manage.py migrate_schemas for TENANT_APPS
 class Command(BaseCommand):
     help = 'Create public and test tenants'
 
