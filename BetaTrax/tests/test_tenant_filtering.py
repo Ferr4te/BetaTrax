@@ -76,3 +76,11 @@ class TenantFilteringTest(TenantTestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data['results']), 0)
 
+        # ==================== PBI‑16 ====================
+    def test_cross_tenant_access_blocked(self):
+        # Tenant2 tries to access Tenant1's defect directly
+        resp = self.client2.get(f'/api/defects/{self.defect_tenant1.id}/')
+
+        # Should NOT be accessible
+        self.assertIn(resp.status_code, [404, 403])
+
