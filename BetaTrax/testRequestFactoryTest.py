@@ -35,7 +35,7 @@ class DefectReportViewSetTests(APITestCase):
 		self.assertIn('Crash on launch', str(response.data))
 
 	def test_pbi_06_retrieve_defectreportdetail(self):
-		request = self.factory.get(f'/api/defects/{self.defect.id}/')
+		request = self.factory.get(f'/api/defects/{self.defectreport.id}/')
 		view = DefectReportViewSet.as_view({'get': 'retrieve'})
 		response = view(request, pk=self.defectreport.id)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
