@@ -313,4 +313,37 @@ class DefectReportViewSetTests(TenantTestCase):
 	# Comment endpoints End
 
 	# Developer effectiveness endpoints Start
+	# GET /api/developers/{id}/effectiveness/
+	# This is a test case that only for "Insufficient data"
+	def test_developer_effectiveness_single(self):
+		with tenant_context(self.tenant):
+			for i in range(10):
+				DefectReport.objects.create(
+					title=f'D{i}', description='x', reproduce_step='x', version='1',
+					product=self.product, betatester=self.tester,
+					status=DefectReport.CurrentStatus.FIXED,
+					developer=self.developer
+				)
+
+		request = self.factory.get(f'/api/developers/{self.developer.id}/effectiveness/')
+		force_authenticate(request, user=self.po_user)
+		view = DeveloperViewSet.as_view({'get': 'effectiveness'})
+		response = view(request, pk=self.developer.id)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data['classification'], 'Insufficient data')
+		self.assertEqual(response.data['total_fixed'], 10)
+		self.assertIsNone(response.data['ratio'])
+
+	# GET /api/developers/effectiveness/all/
+	def test_developer_effectiveness_all(self):
+		request = self.factory.get('/api/developers/effectiveness/all/')
+		force_authenticate(request, user=self.po_user)
+		view = DeveloperViewSet.as_view({'get': 'all_effectiveness'})
+		response = view(request)
+		
+		self.assertEqual(response.status_code, 200)
+		self.assertIn('developers', response.data)
+		self.assertIn('summary', response.data)
+		self.assertEqual(len(response.data['developers']), 1)
 	# Developer effectiveness endpoints End
