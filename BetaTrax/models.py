@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from .developer_metrics import build_effectiveness_metrics
 
 # Create your models here.
 class Product(models.Model):
@@ -43,34 +44,7 @@ class Developer(models.Model):
         )
         reopened_count = reopened_defects.count()
         
-        # Check for insufficient data (fewer than 20 fixed defects)
-        if fixed_count < 20:
-            return {
-                'fixed_count': fixed_count,
-                'reopened_count': reopened_count,
-                'ratio': None,
-                'classification': 'Insufficient data',
-                'message': f'Developer has fixed {fixed_count} defects. Need at least 20 fixed defects for meaningful metric.'
-            }
-        
-        # Calculate ratio (reopened / fixed)
-        ratio = reopened_count / fixed_count if fixed_count > 0 else 0
-        
-        # Determine classification based on ratio
-        if ratio < 0.03125:
-            classification = 'Good'
-        elif ratio < 0.125:
-            classification = 'Fair'
-        else:
-            classification = 'Poor'
-        
-        return {
-            'fixed_count': fixed_count,
-            'reopened_count': reopened_count,
-            'ratio': round(ratio, 6),
-            'classification': classification,
-            'message': None
-        }
+        return build_effectiveness_metrics(fixed_count=fixed_count, reopened_count=reopened_count)
 
 class BetaTester(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='betatester')

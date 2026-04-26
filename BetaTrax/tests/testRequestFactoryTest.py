@@ -35,6 +35,31 @@ class DefectReportViewSetTests(TenantTestCase):
 		connection.set_tenant(self.tenant)
 		self.factory = APIRequestFactory()
 
+	def _create_effectiveness_defects(self, fixed_count, reopened_count):
+		with tenant_context(self.tenant):
+			for i in range(fixed_count):
+				DefectReport.objects.create(
+					title=f'Fixed-{i}',
+					description='x',
+					reproduce_step='x',
+					version='1',
+					product=self.product,
+					betatester=self.tester,
+					status=DefectReport.CurrentStatus.FIXED,
+					developer=self.developer,
+				)
+			for i in range(reopened_count):
+				DefectReport.objects.create(
+					title=f'Reopened-{i}',
+					description='x',
+					reproduce_step='x',
+					version='1',
+					product=self.product,
+					betatester=self.tester,
+					status=DefectReport.CurrentStatus.REOPENED,
+					developer=self.developer,
+				)
+
 	# GET /api/defects/
 	def test_pbi_06_list_defectreport(self):
 		request = self.factory.get('/api/defects/') #(reverse('defect-list'))??
@@ -334,6 +359,48 @@ class DefectReportViewSetTests(TenantTestCase):
 		self.assertEqual(response.data['classification'], 'Insufficient data')
 		self.assertEqual(response.data['total_fixed'], 10)
 		self.assertIsNone(response.data['ratio'])
+
+	def test_developer_effectiveness_single_good(self):
+		self._create_effectiveness_defects(fixed_count=32, reopened_count=0)
+
+		request = self.factory.get(f'/api/developers/{self.developer.id}/effectiveness/')
+		force_authenticate(request, user=self.po_user)
+		view = DeveloperViewSet.as_view({'get': 'effectiveness'})
+		response = view(request, pk=self.developer.id)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data['classification'], 'Good')
+		self.assertEqual(response.data['total_fixed'], 32)
+		self.assertEqual(response.data['total_reopened'], 0)
+		self.assertEqual(response.data['ratio'], 0.0)
+
+	def test_developer_effectiveness_single_fair(self):
+		self._create_effectiveness_defects(fixed_count=32, reopened_count=1)
+
+		request = self.factory.get(f'/api/developers/{self.developer.id}/effectiveness/')
+		force_authenticate(request, user=self.po_user)
+		view = DeveloperViewSet.as_view({'get': 'effectiveness'})
+		response = view(request, pk=self.developer.id)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data['classification'], 'Fair')
+		self.assertEqual(response.data['total_fixed'], 32)
+		self.assertEqual(response.data['total_reopened'], 1)
+		self.assertEqual(response.data['ratio'], 0.03125)
+
+	def test_developer_effectiveness_single_poor(self):
+		self._create_effectiveness_defects(fixed_count=24, reopened_count=3)
+
+		request = self.factory.get(f'/api/developers/{self.developer.id}/effectiveness/')
+		force_authenticate(request, user=self.po_user)
+		view = DeveloperViewSet.as_view({'get': 'effectiveness'})
+		response = view(request, pk=self.developer.id)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data['classification'], 'Poor')
+		self.assertEqual(response.data['total_fixed'], 24)
+		self.assertEqual(response.data['total_reopened'], 3)
+		self.assertEqual(response.data['ratio'], 0.125)
 
 	# GET /api/developers/effectiveness/all/
 	def test_developer_effectiveness_all(self):
