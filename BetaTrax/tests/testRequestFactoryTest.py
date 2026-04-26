@@ -144,3 +144,12 @@ class DefectReportViewSetTests(TenantTestCase):
 		self.assertEqual(response.status_code, 204)
 		self.assertFalse(Product.objects.filter(id=self.product.id).exists())
 	# Product endpoints End
+
+	# Defect custom actions Start(assign, fix...)
+	# Defect custom actions End
+
+	# Comment endpoints Start
+	# Comment endpoints End
+
+	# Developer effectiveness endpoints Start
+	# Developer effectiveness endpoints End
