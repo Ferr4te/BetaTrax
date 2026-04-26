@@ -3,7 +3,7 @@ from rest_framework import status
 from django.urls import reverse
 from django.contrib.auth.models import User
 import json
-from BetaTrax.views import DefectReportViewSet, ProductViewSet
+from BetaTrax.views import DefectReportViewSet, ProductViewSet, CommentViewSet, DeveloperViewSet
 from BetaTrax.models import BetaTester, DefectReport, Developer, Product, ProductOwner, Comment
 from django_tenants.test.cases import TenantTestCase
 from django_tenants.utils import tenant_context
@@ -35,6 +35,7 @@ class DefectReportViewSetTests(TenantTestCase):
 		connection.set_tenant(self.tenant)
 		self.factory = APIRequestFactory()
 
+	# GET /api/defects/
 	def test_pbi_06_list_defectreport(self):
 		request = self.factory.get('/api/defects/') #(reverse('defect-list'))??
 		view = DefectReportViewSet.as_view({'get': 'list'})
@@ -44,6 +45,7 @@ class DefectReportViewSetTests(TenantTestCase):
 		self.assertEqual(len(response.data['results']), 1)
 		self.assertIn('Crash on launch', str(response.data))
 
+	# GET /api/defects/{id}/
 	def test_pbi_06_retrieve_defectreportdetail(self):
 		request = self.factory.get(f'/api/defects/{self.defectreport.id}/')
 		view = DefectReportViewSet.as_view({'get': 'retrieve'})
@@ -52,6 +54,7 @@ class DefectReportViewSetTests(TenantTestCase):
 		self.assertEqual(response.data['id'], self.defectreport.id)
 		self.assertEqual(response.data['title'], 'Crash on launch')
 		
+	# POST /api/defects/
 	def test_pbi_01_create_defectreport(self):
 		data = {
 			'title':'Login issue',
@@ -70,6 +73,7 @@ class DefectReportViewSetTests(TenantTestCase):
 		new_defect = DefectReport.objects.get(title='Login issue')
 		self.assertEqual(new_defect.version, '1.0.0')
 
+	# PATCH /api/defects/{id}/
 	def test_pbi_02_update_defectreport(self):
 		data = {
 			'status': DefectReport.CurrentStatus.OPEN,
@@ -85,3 +89,58 @@ class DefectReportViewSetTests(TenantTestCase):
 		self.assertEqual(self.defectreport.severity, DefectReport.Severity.MAJOR)
 		self.assertEqual(self.defectreport.priority, DefectReport.Priority.HIGH)
 		
+	# Product endpoints Start
+	# GET /api/products/
+	def test_product_list(self):
+		request = self.factory.get('/api/products/')
+		force_authenticate(request, user=self.po_user)
+		view = ProductViewSet.as_view({'get': 'list'})
+		response = view(request)
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data['count'], 1)
+		self.assertEqual(len(response.data['results']), 1)
+		self.assertEqual(response.data['results'][0]['id'], self.product.id)
+		self.assertEqual(response.data['results'][0]['name'], self.product.name)
+	
+	# POST /api/products/
+	def test_product_create(self):
+		data = {'name': 'NewProduct'}
+		request = self.factory.post('/api/products/', data, format='json')
+		force_authenticate(request, user=self.po_user)
+		view = ProductViewSet.as_view({'post': 'create'})
+		response = view(request)
+		self.assertEqual(response.status_code, 201)
+		self.assertEqual(response.data['name'], 'NewProduct')
+		# Verify it's in the database
+		self.assertTrue(Product.objects.filter(name='NewProduct').exists())
+
+	# GET /api/products/{id}/
+	def test_product_retrieve(self):
+		request = self.factory.get(f'/api/products/{self.product.id}/')
+		force_authenticate(request, user=self.po_user)
+		view = ProductViewSet.as_view({'get': 'retrieve'})
+		response = view(request, pk=self.product.id)
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data['id'], self.product.id)
+		self.assertEqual(response.data['name'], self.product.name)
+
+	# PATCH /api/products/{id}/
+	def test_product_update(self):
+		data = {'name': 'UpdatedName'}
+		request = self.factory.patch(f'/api/products/{self.product.id}/', data, format='json')
+		force_authenticate(request, user=self.po_user)
+		view = ProductViewSet.as_view({'patch': 'partial_update'})
+		response = view(request, pk=self.product.id)
+		self.assertEqual(response.status_code, 200)
+		self.product.refresh_from_db()
+		self.assertEqual(self.product.name, 'UpdatedName')
+
+	# DELETE /api/products/{id}/
+	def test_product_delete(self):
+		request = self.factory.delete(f'/api/products/{self.product.id}/')
+		force_authenticate(request, user=self.po_user)
+		view = ProductViewSet.as_view({'delete': 'destroy'})
+		response = view(request, pk=self.product.id)
+		self.assertEqual(response.status_code, 204)
+		self.assertFalse(Product.objects.filter(id=self.product.id).exists())
+	# Product endpoints End
