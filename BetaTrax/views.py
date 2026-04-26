@@ -5,13 +5,14 @@ from .serializers import (
     EvaluateDefectSerializer, 
     DefectReportReadOnlySerializer,
     ProductSerializer,
-    CommentSerializer
+    CommentSerializer,
+    DeveloperEffectivenessSerializer
 )
 from rest_framework.response import Response
 from rest_framework import generics, viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from django_filters.rest_framework import DjangoFilterBackend
-from .notification import send_defect_status_change_notification
+from .notification import send_defect_status_change_notification, send_duplicate_notification
 from rest_framework.permissions import BasePermission 
 from .permissions import IsProductOwner, IsDeveloper, IsBetaTester
 from rest_framework.permissions import IsAuthenticated
@@ -162,7 +163,10 @@ class DefectReportViewSet(viewsets.ModelViewSet):
             return Response({"error": "Only NEW defects can be evaluated"}, status=400)
         serializer = EvaluateDefectSerializer(defect, data=request.data, partial=True)
         if serializer.is_valid():
+            old_status = defect.status
             serializer.save()
+            updated_defect = serializer.instance
+            send_defect_status_change_notification(updated_defect, old_status, updated_defect.status)
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
@@ -236,6 +240,10 @@ class DefectReportViewSet(viewsets.ModelViewSet):
             updated_defect = serializer.save()
             
             send_defect_status_change_notification(updated_defect, old_status, updated_defect.status)
+
+            original_defect = serializer.validated_data.get('duplicate_of')
+            if original_defect:
+                send_duplicate_notification(original_defect, updated_defect)
             
             return Response(serializer.data, status=status.HTTP_200_OK)
         

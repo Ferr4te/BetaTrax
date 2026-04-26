@@ -16,12 +16,31 @@ def send_defect_status_change_notification(defect, old_status, new_status):
         f"Defect: {defect.title}\n"
         f"Description: {defect.description}\n"
         f"New status: {new_status}\n"
-        f"View at: http://127.0.0.1:8000/api/defects/{defect.id}/\n"
     )
     send_mail(
         subject,
         message,
         settings.DEFAULT_FROM_EMAIL,
         [defect.tester_email],
+        fail_silently=False,
+    )
+
+# Notify the tester who reported the original defect that their report has been duplicated by another defect report
+def send_duplicate_notification(original_defect, duplicate_defect):
+    if not original_defect.tester_email:
+        return
+
+    subject = f"Defect #{original_defect.id} has been duplicated"
+    message = (
+        f"A duplicate defect report has been linked to your original report:\n\n"
+        f"Original defect: {original_defect.title} (ID: {original_defect.id})\n"
+        f"Duplicate defect: {duplicate_defect.title} (ID: {duplicate_defect.id})\n"
+        f"Current status of duplicate: {duplicate_defect.status}\n\n"
+    )
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [original_defect.tester_email],
         fail_silently=False,
     )
