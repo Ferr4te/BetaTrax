@@ -5,26 +5,34 @@ from django.contrib.auth.models import User
 import json
 from .views import DefectReportViewSet, ProductViewSet
 from .models import BetaTester, DefectReport, Developer, Product, ProductOwner, Comment
+from django_tenants.test.cases import TenantTestCase
+from django_tenants.utils import tenant_context
+from django.db import connection
+from customers.models import Client as Tenant, Domain
+from rest_framework.test import force_authenticate
 
-class DefectReportViewSetTests(APITestCase):
+
+class DefectReportViewSetTests(TenantTestCase):
 	def setUp(self):
-		self.factory = APIRequestFactory()
-		self.tester_user = User.objects.create_user(username='tester1', password='pass123')
-		self.po_user = User.objects.create_user(username='po1', password='pass123')
-		self.dev_user = User.objects.create_user(username='dev1', password='pass123')
-		
-		self.product = Product.objects.create()
-		self.tester = BetaTester.objects.create(user=self.tester_user, email='tester@example.com')
-		self.owner = ProductOwner.objects.create(user=self.po_user, product=self.product)
-		self.developer = Developer.objects.create(user=self.dev_user, product=self.product)
-		self.defectreport = DefectReport.objects.create(
-			title='Crash on launch', 
-			description='App crashes on startup',
-			reproduce_step='Install app; open app',
-			version='1.2.3',
-			product=self.product,
-			betatester=self.tester
-		)
+		super().setUp()
+		connection.set_tenant(self.tenant)
+		with tenant_context(self.tenant):
+			self.tester_user = User.objects.create_user(username='tester1', password='pass123')
+			self.po_user = User.objects.create_user(username='po1', password='pass123')
+			self.dev_user = User.objects.create_user(username='dev1', password='pass123')
+			
+			self.product = Product.objects.create(name='Test Product')
+			self.tester = BetaTester.objects.create(user=self.tester_user, email='tester@example.com')
+			self.owner = ProductOwner.objects.create(user=self.po_user, product=self.product)
+			self.developer = Developer.objects.create(user=self.dev_user, product=self.product)
+			self.defectreport = DefectReport.objects.create(
+				title='Crash on launch',
+				description='App crashes on startup',
+				reproduce_step='Install app; open app',
+				version='1.2.3',
+				product=self.product,
+				betatester=self.tester
+			)
 
 	def test_pbi_06_list_defectreport(self):
 		request = self.factory.get('/api/defects/') #(reverse('defect-list'))??
