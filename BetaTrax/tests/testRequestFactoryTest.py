@@ -276,6 +276,40 @@ class DefectReportViewSetTests(TenantTestCase):
 	# Defect custom actions End
 
 	# Comment endpoints Start
+	# GET /api/defects/{id}/comments/
+	def test_comment_list(self):
+		with tenant_context(self.tenant):
+			Comment.objects.create(
+				defect=self.defectreport,
+				author=self.po_user,
+				text='Test comment'
+			)
+
+		request = self.factory.get(f'/api/defects/{self.defectreport.id}/comments/')
+		force_authenticate(request, user=self.po_user)
+		view = CommentViewSet.as_view({'get': 'list'})
+		response = view(request, defect_pk=self.defectreport.id)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data['count'], 1)
+		self.assertEqual(len(response.data['results']), 1)
+		self.assertEqual(response.data['results'][0]['text'], 'Test comment')
+
+	# POST /api/defects/{id}/comments/
+	def test_comment_create(self):
+		request = self.factory.post(
+			f'/api/defects/{self.defectreport.id}/comments/',
+			{'text': 'New comment'}, format='json'
+		)
+		force_authenticate(request, user=self.po_user)
+		view = CommentViewSet.as_view({'post': 'create'})
+		response = view(request, defect_pk=self.defectreport.id)
+
+		self.assertEqual(response.status_code, 201)
+		self.assertEqual(response.data['text'], 'New comment')
+		self.assertEqual(response.data['author'], self.po_user.username)
+		from BetaTrax.models import Comment
+		self.assertTrue(Comment.objects.filter(defect=self.defectreport, text='New comment').exists())
 	# Comment endpoints End
 
 	# Developer effectiveness endpoints Start
