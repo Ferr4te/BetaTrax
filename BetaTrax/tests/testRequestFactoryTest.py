@@ -109,7 +109,8 @@ class DefectReportViewSetTests(TenantTestCase):
 			'priority': DefectReport.Priority.HIGH,
 		}
 		request = self.factory.patch(f'/api/defects/{self.defectreport.id}/', data, format='json')
-		view = DefectReportViewSet.as_view({'patch': 'partial_update'})
+		force_authenticate(request, user=self.po_user)  # ← Added (needs permission)
+		view = DefectReportViewSet.as_view({'patch': 'evaluate'})  # ← Changed to evaluate
 		response = view(request, pk=self.defectreport.id)
 
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
