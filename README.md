@@ -41,7 +41,7 @@ python -m venv .venv
 ### 2. Install dependencies
 
 ```powershell
-pip install django djangorestframework django-filter drf-nested-routers django-tenants
+pip install django djangorestframework django-filter drf-nested-routers django-tenants drf_spectacular
 ```
 
 ### 3. Apply migrations
