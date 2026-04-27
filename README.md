@@ -67,18 +67,8 @@ python manage.py setup_tenants
 python manage.py runserver
 ```
 
-Open: http://127.0.0.1:8000/
+Open: http://localhost:8000/
 
-## Core Web Routes
-
-- Tester dashboard: `/tester/`
-- Defect submit form: `/tester/defectform/`
-- Defect submit success page: `/defectform/success/`
-- Product owner dashboard: `/owner/`
-- Product owner evaluate page: `/owner/evaluate/`
-- Product owner evaluate/update detail: `/owner/evaluate/<id>/`
-- Developer dashboard: `/developer/`
-- Developer assign action (POST): `/developer/defects/<id>/assign/`
 
 ## API Routes
 
