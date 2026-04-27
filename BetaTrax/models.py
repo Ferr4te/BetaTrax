@@ -106,6 +106,9 @@ class DefectReport(models.Model):
     def __str__(self):
         return (f"DefectReportID:{self.id}")
     
+    class Meta:
+        ordering = ['-created_at']  # Most recent defects first, fix database inconsistent order of items issue
+    
 # PBI-12 Comment Model
 class Comment(models.Model):
     defect = models.ForeignKey(DefectReport, on_delete=models.CASCADE, related_name='comments')
