@@ -262,8 +262,10 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 #PBI-18
 class DeveloperEffectivenessViewSet(viewsets.ViewSet):
+    # Only authenticated Product Owners can access these endpoints
     permission_classes = [IsAuthenticated, IsProductOwner]
-    
+
+    # Formats a single developer's metrics into a clean dictionary for API responses
     def get_developer_metrics(self, developer):
         """Get effectiveness metrics for a single developer"""
         metrics = developer.get_effectiveness_metrics()
@@ -277,7 +279,9 @@ class DeveloperEffectivenessViewSet(viewsets.ViewSet):
             'classification': metrics['classification'],
             'message': metrics.get('message')
         }
-
+    # Finds the developer by ID
+    # Validates the Product Owner has access to that developer's product
+    # Returns the developer's effectiveness metrics
     @action(detail=False, methods=['get'], url_path='effectiveness/(?P<developer_id>[^/.]+)')
     def developer_effectiveness(self, request, developer_id=None):
         # Verify product owner has access to this developer's product
@@ -306,6 +310,10 @@ class DeveloperEffectivenessViewSet(viewsets.ViewSet):
         serializer = DeveloperEffectivenessSerializer(metrics_data)
         return Response(serializer.data)
 
+    # Gets all developers (or filtered by product owner's product)
+    # Calculates metrics for each developer
+    # Sorts by ratio (worst first)
+    # Returns list plus summary statistics
     @action(detail=False, methods=['get'], url_path='effectiveness')
     def all_developers_effectiveness(self, request):
         # Determine which developers to show
@@ -337,6 +345,11 @@ class DeveloperEffectivenessViewSet(viewsets.ViewSet):
             'summary': summary
         })
 
+    # Calculates: Total number of developers
+    # How many have sufficient data (≥20 fixes)
+    # Average ratio across all developers
+    # Count of Good/Fair/Poor classifications
+    # Count of developers with insufficient data
     def _get_summary_statistics(self, metrics_list):
         """Calculate summary statistics from metrics list"""
         valid_metrics = [m for m in metrics_list if m['ratio'] is not None]
@@ -368,10 +381,13 @@ class DeveloperEffectivenessViewSet(viewsets.ViewSet):
             'insufficient_count': len([m for m in metrics_list if m['ratio'] is None])
         }
 
+# This ViewSet provides read-only API endpoints for viewing developer information and their effectiveness metrics
+# Any authenticated user can view developers (but with product filtering)
 class DeveloperViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Developer.objects.all()
     permission_classes = [IsAuthenticated]
-    
+
+    # Filters developers based on who is requesting
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
@@ -379,7 +395,10 @@ class DeveloperViewSet(viewsets.ReadOnlyModelViewSet):
         if hasattr(user, 'productowner'):
             return Developer.objects.filter(product=user.productowner.product)
         return Developer.objects.none()
-    
+
+    # Gets the developer by ID (from URL)
+    # Checks if the requester has permission to view this developer
+    # Returns the developer's effectiveness metrics with extra details
     @action(detail=True, methods=['get'], url_path='effectiveness')
     def effectiveness(self, request, pk=None):
         developer = self.get_object()
@@ -417,6 +436,9 @@ class DeveloperViewSet(viewsets.ReadOnlyModelViewSet):
         
         return Response(response_data)
 
+    # Gets all developers the user has access to
+    # Calculates metrics for each
+    # Returns list plus summary statistics
     @action(detail=False, methods=['get'], url_path='effectiveness/all')
     def all_effectiveness(self, request):
         if request.user.is_superuser:
