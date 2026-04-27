@@ -1,7 +1,6 @@
 from django.urls import path, include
 from . import views
-from .views import DefectReportCreateView, DefectReportViewSet, ProductViewSet, CommentViewSet, DeveloperEffectivenessViewSet, DeveloperViewSet
-from .views import evaluate_defect_update_view
+from .views import DefectReportViewSet, ProductViewSet, CommentViewSet, DeveloperViewSet
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView

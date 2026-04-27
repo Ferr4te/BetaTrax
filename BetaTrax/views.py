@@ -19,98 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 # Create your views here.
 
 # handle the defect report form
-class DefectReportCreateView(generics.CreateAPIView):
-    queryset = DefectReport.objects.all()
-    serializer_class = DefectReportSerializer
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return redirect('defect_success')
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class evaluate_defect_update_view(generics.RetrieveUpdateAPIView):
-    queryset = DefectReport.objects.all()
-    serializer_class = EvaluateDefectSerializer
-    
-# PBI-03 Select defect to work on =================================
-def _resolve_developer_from_request(request):
-    # Prefer authenticated identity when developer id matches user id.
-    if request.user.is_authenticated:
-        developer = Developer.objects.filter(pk=request.user.id).first()
-        if developer:
-            request.session['developer_id'] = developer.id
-            return developer
-
-    session_developer_id = request.session.get('developer_id')
-    if session_developer_id:
-        developer = Developer.objects.filter(pk=session_developer_id).first()
-        if developer:
-            return developer
-
-    query_developer_id = request.GET.get('developer_id')
-    if query_developer_id:
-        developer = get_object_or_404(Developer, pk=query_developer_id)
-        request.session['developer_id'] = developer.id
-        return developer
-
-    developer = Developer.objects.first()
-    if developer:
-        request.session['developer_id'] = developer.id
-    return developer
-
-
-def developer_dashboard_view(request):
-    developer = _resolve_developer_from_request(request)
-
-    defects = DefectReport.objects.none()
-    if developer:
-        defects = DefectReport.objects.filter(
-            product=developer.product,
-            status=DefectReport.CurrentStatus.OPEN,
-            developer__isnull=True,
-        ).order_by('id')
-
-    return render(
-        request,
-        'developer/dashboard.html',
-        {'defects': defects, 'developer': developer},
-    )
-
-
-def assign_defect_view(request, pk):
-    if request.method != 'POST':
-        return redirect('developer_dashboard')
-
-    developer = _resolve_developer_from_request(request)
-    if not developer:
-        return redirect('developer_dashboard')
-
-    defect = get_object_or_404(DefectReport, pk=pk)
-
-    if defect.product_id == developer.product_id and defect.status == DefectReport.CurrentStatus.OPEN:
-        defect.status = DefectReport.CurrentStatus.ASSIGNED
-        defect.developer = developer
-        defect.save(update_fields=['status', 'developer'])
-
-    return redirect(f"/developer/?developer_id={developer.id}")
-
-#PBI-06
-class NewDefectListView(generics.ListAPIView):
-    serializer_class = DefectReportReadOnlySerializer
-    def get_queryset(self):
-        return DefectReport.objects.filter(status=DefectReport.CurrentStatus.NEW)
-
-class DefectDetailView(generics.RetrieveAPIView):
-    queryset = DefectReport.objects.all()
-    serializer_class = DefectReportReadOnlySerializer
-
-# Helper function to get defect or return 404
-def get_defect_or_404(pk):
-    try:
-        return DefectReport.objects.get(pk=pk)
-    except DefectReport.DoesNotExist:
-        return None
 
 # FilterSet for DefectReport to support filtering
 # api/defects/ is the url showing all the defects
@@ -128,7 +37,7 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     
     # old method removed, this is for adding new defect
     # with the same route: GET /api/defects/new/
-    @action(detail=False, methods=['get'], url_path='new')
+    @action(detail=False, methods=['get'], url_path='new',permission_classes=[IsAuthenticated, IsProductOwner])
     def new_defects(self, request):
         queryset = self.get_queryset().filter(status=DefectReport.CurrentStatus.NEW)
         serializer = self.get_serializer(queryset, many=True)
@@ -138,11 +47,13 @@ class DefectReportViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'evaluate':
             return EvaluateDefectSerializer
+        elif self.action == 'retrieve':
+            return DefectReportReadOnlySerializer
         elif self.action in ['fix', 'resolve', 'assign', 'cannot_reproduce', 'reopen']:
             return DefectReportReadOnlySerializer
         else:
-            return DefectReportReadOnlySerializer
-    
+            return DefectReportSerializer
+        
     def get_queryset(self):
         queryset = super().get_queryset()
         status_param = self.request.query_params.get('status')
@@ -155,8 +66,8 @@ class DefectReportViewSet(viewsets.ModelViewSet):
             queryset = queryset.exclude(status=DefectReport.CurrentStatus.REJECTED)
         return queryset
 
-    #PBI-02 evaluate
-    @action(detail=True, methods=['patch'])
+    #PBI-02/06 evaluate
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsProductOwner])
     def evaluate(self, request, pk=None):
         defect = self.get_object()
         if defect.status != DefectReport.CurrentStatus.NEW:

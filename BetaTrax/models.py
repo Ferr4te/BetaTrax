@@ -7,12 +7,18 @@ class Product(models.Model):
     name = models.CharField(max_length=254, unique=True, null=True, blank=True)
     def __str__(self):
         return (f"ProductID:{self.id} - {self.name}" if self.name else f"ProductID:{self.id}")
+    
+    class Meta:
+        ordering = ['id'] #fix database inconsistent order of items issue
 
 class ProductOwner(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='productowner')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     def __str__(self):
         return (f"ProductOwnerID:{self.id}")
+
+    class Meta:
+        ordering = ['id'] #fix database inconsistent order of items issue
 
 class Developer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='developer')
@@ -45,12 +51,18 @@ class Developer(models.Model):
         reopened_count = reopened_defects.count()
         
         return build_effectiveness_metrics(fixed_count=fixed_count, reopened_count=reopened_count)
+    
+    class Meta:
+        ordering = ['id'] #fix database inconsistent order of items issue
 
 class BetaTester(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='betatester')
     email = models.CharField(max_length=254)
     def __str__(self):
         return (f"BetaTesterID:{self.id}")
+    
+    class Meta:
+        ordering = ['id'] #fix database inconsistent order of items issue
 
 class DefectReport(models.Model):
     tester_email = models.CharField(max_length=254, blank=True, null=True)
