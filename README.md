@@ -14,20 +14,24 @@ It supports three role-based flows:
 - Developer dashboard to assign open defects
 - REST API for defect lifecycle actions
 - Comment API per defect (nested routes)
-- SQLite-backed local development setup
+- Multi-tenant support using django-tenants and PostgreSQL schemas
+- Developer effectiveness metrics with automated tests and coverage evidence
 
 ## Tech Stack
 
 - Python 3.13+
 - Django
-- SQLite
+- PostgreSQL
+- django-tenants
+- Django REST Framework
 
 ## Project Layout
 
 - `PJ3297/`: project settings and root URL config
 - `BetaTrax/`: app code (models, views, serializers, templates, URLs)
+- `customers/`: tenant and domain models plus tenant setup command
 - `manage.py`: Django management entrypoint
-- `db.sqlite3`: local database file
+- `db.sqlite3`: legacy local file kept in the workspace, but Sprint 3 uses PostgreSQL
 
 ## Getting Started
 
@@ -41,16 +45,23 @@ python -m venv .venv
 ### 2. Install dependencies
 
 ```powershell
-pip install django djangorestframework django-filter drf-nested-routers django-tenants drf_spectacular
+pip install django djangorestframework django-filter drf-nested-routers
 ```
 
 ### 3. Apply migrations
 
 ```powershell
-python manage.py migrate
+python manage.py migrate_schemas --shared
+python manage.py migrate_schemas
 ```
 
-### 4. Run development server
+### 4. Create tenant schemas and domains
+
+```powershell
+python manage.py setup_tenants
+```
+
+### 5. Run development server
 
 ```powershell
 python manage.py runserver
@@ -125,5 +136,7 @@ POST /api/defects/12/assign/
 - Authentication and permissions are enforced for several API actions.
 - Email notifications are sent through Django's console email backend in development.
 - By default, list queries exclude defects with `Rejected` status unless filtered explicitly.
+- Sprint 3 requires PostgreSQL because tenant schemas are created through django-tenants.
+- Sprint 3 includes automated tests for tenant isolation and developer effectiveness classification.
 
 
