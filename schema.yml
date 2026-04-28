@@ -449,6 +449,101 @@ paths:
           description: ''
 
   # ========== Product Owner (Product Management) ==========
+  /api/developers/{id}/effectiveness/:
+    get:
+      operationId: developers_effectiveness_retrieve
+      summary: PBI-19 – Get effectiveness metrics for a specific developer (Product Owner)
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: Developer ID
+      tags:
+        - Product Owner
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          description: Developer effectiveness metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  developer_id:
+                    type: integer
+                  developer_name:
+                    type: string
+                  total_fixed:
+                    type: integer
+                  total_reopened:
+                    type: integer
+                  ratio:
+                    type: number
+                    nullable: true
+                  classification:
+                    type: string
+                    enum: [Good, Fair, Poor, Insufficient data]
+                  message:
+                    type: string
+                    nullable: true
+  /api/developers/effectiveness/all/:
+    get:
+      operationId: developers_effectiveness_all
+      summary: PBI-19 – Get effectiveness metrics for all developers (Product Owner)
+      tags:
+        - Product Owner
+      security:
+        - cookieAuth: []
+        - basicAuth: []
+      responses:
+        '200':
+          description: List of developer effectiveness metrics with summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  developers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        developer_id:
+                          type: integer
+                        developer_name:
+                          type: string
+                        total_fixed:
+                          type: integer
+                        total_reopened:
+                          type: integer
+                        ratio:
+                          type: number
+                          nullable: true
+                        classification:
+                          type: string
+                          enum: [Good, Fair, Poor, Insufficient data]
+                  summary:
+                    type: object
+                    properties:
+                      total_developers:
+                        type: integer
+                      developers_with_sufficient_data:
+                        type: integer
+                      average_ratio:
+                        type: number
+                        nullable: true
+                      good_count:
+                        type: integer
+                      fair_count:
+                        type: integer
+                      poor_count:
+                        type: integer
+                      insufficient_count:
+                        type: integer
   /api/products/:
     get:
       operationId: products_list
